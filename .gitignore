@@ -4,6 +4,9 @@ node_modules/
 # The project itself has no YAML files, so all of them are ignored.
 *.yaml
 *.yml
+# ...except the GitHub config (issue forms, workflows, dependabot)
+!.github/**/*.yml
+!.github/**/*.yaml
 *.kubeconfig
 kubeconfig*
 

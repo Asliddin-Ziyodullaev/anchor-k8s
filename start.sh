@@ -21,7 +21,7 @@ cd "$(dirname "$0")"
 CLI_PORT="${PORT:-}"; CLI_KUBECONFIG_FILE="${KUBECONFIG_FILE:-}"; CLI_SSH_TUNNELS="${SSH_TUNNELS:-}"
 if [ -f .env ]; then set -a; . ./.env; set +a; fi
 
-PORT="${CLI_PORT:-${PORT:-8888}}"
+PORT="${CLI_PORT:-${PORT:-9901}}"
 KUBECONFIG_FILE="${CLI_KUBECONFIG_FILE:-${KUBECONFIG_FILE:-}}"
 SSH_TUNNELS="${CLI_SSH_TUNNELS:-${SSH_TUNNELS:-}}"
 URL="http://127.0.0.1:${PORT}"

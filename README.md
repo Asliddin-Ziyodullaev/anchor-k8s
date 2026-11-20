@@ -4,6 +4,12 @@
 
 <p align="center"><code>uz.az.anchor.k8s</code> · O'zbek · Русский · English</p>
 
+<p align="center">
+  <a href="https://github.com/anchor-k8s/anchor/actions/workflows/ci.yml"><img src="https://github.com/anchor-k8s/anchor/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT license"></a>
+  <img src="https://img.shields.io/badge/node-%3E%3D20.11-339933.svg" alt="Node.js 20.11+">
+</p>
+
 A lightweight web dashboard for Kubernetes that connects through a kubeconfig. One Node.js server and one HTML page: no build step and no database.
 
 ## Features
@@ -38,7 +44,7 @@ cp .env.example .env      # set KUBECONFIG_FILE to your kubeconfig path
 ./start.sh
 ```
 
-The browser opens automatically at http://127.0.0.1:8888
+The browser opens automatically at http://127.0.0.1:9901
 
 `start.sh` runs the server in the background, so the dashboard keeps running after you close the terminal:
 
@@ -55,13 +61,15 @@ Settings go in `.env` or on the command line: `PORT=9000 ./start.sh`, `KUBECONFI
 
 The kubeconfig is looked up in this order: `KUBECONFIG_FILE` → `$KUBECONFIG` → `./kubeconfig.yaml` → `~/.kube/config`.
 
-Without the script: `node server.js /path/to/kubeconfig.yaml` (port from `PORT`, default 8080).
+Without the script: `node server.js /path/to/kubeconfig.yaml` (port from `PORT`, default 9901).
 
 ### Try it without a cluster
 
 ```bash
-npm run demo     # fake data, http://127.0.0.1:8090
+npm run demo     # fake data, http://127.0.0.1:9901
 ```
+
+If the real dashboard is already running on 9901, use another port: `PORT=9902 npm run demo`.
 
 ## Monitoring tabs
 
@@ -145,7 +153,13 @@ public/index.html  The whole UI (HTML + CSS + JS, no framework), uz/ru/en string
 public/logo.svg    Logo
 demo.js            Fake data for the no-cluster demo mode
 start.sh           Background start / stop script
+scripts/check.mjs  Syntax checks used by `npm run check` and CI
+.github/           Issue / PR templates, CI workflow, Dependabot
 ```
+
+## Contributing
+
+Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) for the setup and guidelines, and follow the [code of conduct](CODE_OF_CONDUCT.md). Report security issues privately as described in [SECURITY.md](SECURITY.md). For help, see [SUPPORT.md](SUPPORT.md). Changes are listed in [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 

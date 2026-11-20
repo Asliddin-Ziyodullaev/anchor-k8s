@@ -1,0 +1,67 @@
+name: Bug report
+description: Something in the dashboard, the API or start.sh doesn't work as expected.
+title: 'bug: '
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for the report! **Never paste a kubeconfig, token, certificate, cluster address or real log data.**
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Overview / workloads tables
+        - Pod logs
+        - Resources (RAM / CPU)
+        - Health / alerts
+        - Versions / rollout history
+        - Nginx checks
+        - Context / namespace / kubeconfig
+        - start.sh / SSH tunnels
+        - Translations (uz / ru / en)
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Commit or version
+      placeholder: e.g. 0d1c8fa or 1.0.0
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      description: Node.js version, OS, browser, Kubernetes distribution and version.
+      placeholder: Node 22, macOS 15, Chrome 140, RKE2 v1.35
+    validations:
+      required: true
+  - type: dropdown
+    id: demo
+    attributes:
+      label: Does it also happen in demo mode (npm run demo)?
+      options: ['Yes', 'No', 'Not tried']
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open the Monitoring > Resources tab
+        2. Switch to "By app"
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs. actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Server log or browser console output
+      description: From `./start.sh logs` or the browser console. Remove anything private first.
+      render: text

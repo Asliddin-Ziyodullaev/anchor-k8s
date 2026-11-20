@@ -6,7 +6,7 @@ import tls from 'node:tls';
 import * as k8s from '@kubernetes/client-node';
 import { demo } from './demo.js';
 
-const PORT = Number(process.env.PORT || 8080);
+const PORT = Number(process.env.PORT || 9901);
 const HOST = process.env.HOST || '127.0.0.1'; // only local by default: kubeconfig = cluster access
 const DEMO = process.env.DEMO === '1';
 
