@@ -14,6 +14,7 @@ All notable changes to this project are documented here. The format follows [Kee
 - StatefulSets, DaemonSets, Jobs, CronJobs, ConfigMaps and PVCs, loaded only while their tab is open.
 - Several kubeconfig files merged into one context list; SSH tunnels opened by `start.sh`.
 - Spring Boot console style for JSON pod logs.
+- Start at login on macOS (`./start.sh install` / `uninstall`) and an installable app (web manifest, app icons).
 - Community files: code of conduct, contributing guide, security policy, issue and PR templates, CI.
 
 ### Fixed

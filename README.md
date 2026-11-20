@@ -32,6 +32,7 @@ A lightweight web dashboard for Kubernetes that connects through a kubeconfig. O
 - RBAC-aware: resources you can't access show a 🔒, and the namespace list falls back to the kubeconfig contexts
 - Three UI languages: Uzbek, Russian and English (switch from the top bar; the choice is remembered)
 - Light and dark theme, works on small screens
+- Plug and play on macOS: starts at login (`./start.sh install`) and installs as an app with its own window and Dock icon
 
 ## Getting started
 
@@ -63,6 +64,23 @@ The kubeconfig is looked up in this order: `KUBECONFIG_FILE` → `$KUBECONFIG` �
 
 Without the script: `node server.js /path/to/kubeconfig.yaml` (port from `PORT`, default 9901).
 
+### Start at login (plug and play)
+
+On macOS, let the Mac start the dashboard for you:
+
+```bash
+./start.sh install      # turn on: starts at login, restarts if it crashes, opens the app
+./start.sh uninstall    # turn off
+```
+
+This adds a LaunchAgent (`~/Library/LaunchAgents/uz.az.anchor.k8s.plist`) that runs `./start.sh run` after you log in. The dashboard opens once per boot; set `OPEN_ON_LOGIN=0` in `.env` to only start the server. `./start.sh stop` stops it until the next login, `./start.sh status` shows whether start at login is on.
+
+SSH tunnels from `SSH_TUNNELS` also open at login, but there is no terminal to type a password into, so use a key without a passphrase, `ssh-agent`, or a key stored in the macOS Keychain (`UseKeychain yes` in `~/.ssh/config`).
+
+### Use it as an app
+
+Open the dashboard in Chrome or Edge and choose **Install Anchor K8s** in the address bar (or Safari → File → **Add to Dock**). It then runs in its own window with the anchor icon in the Dock and Launchpad, and start at login opens this app window instead of a browser tab.
+
 ### Try it without a cluster
 
 ```bash
@@ -88,7 +106,7 @@ StatefulSets, DaemonSets, Jobs, CronJobs, ConfigMaps and PVCs are fetched only w
 The **Spring** toggle in the log toolbar (on by default, remembered per browser) renders each log line the way Spring Boot prints it to the console:
 
 ```
-2026-11-20T17:16:49.123  INFO --- [account-gateway] [nio-8080-exec-1] u.f.a.controller.AccountController       : #request GET /api/v1/accounts 200
+2026-11-20T17:16:49.123  INFO --- [orders-service] [nio-8080-exec-1] c.e.o.controller.OrderController         : #request GET /api/v1/orders 200
 ```
 
 - **JSON formats:** `{"@timestamp","message"}` lines, the logstash encoder and log4j2 `JsonLayout` (`level`/`logLevel`, `thread`/`threadName`, `loggerName`).

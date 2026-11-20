@@ -2,23 +2,23 @@
 const now = Date.now();
 const ago = (min) => new Date(now - min * 60000).toISOString();
 
-const namespaces = ['default', 'mobile-dev', 'mobile-api', 'monitoring', 'ingress-nginx', 'kube-system'];
+const namespaces = ['default', 'apps-dev', 'apps-staging', 'monitoring', 'ingress-nginx', 'kube-system'];
 
 const deployments = [
-  ['mobile-dev', 'mobile-gateway', 3, 3, 'registry.local/mobile/gateway:1.14.2'],
-  ['mobile-dev', 'auth-service', 2, 2, 'registry.local/mobile/auth:2.3.0'],
-  ['mobile-dev', 'payments-service', 2, 1, 'registry.local/mobile/payments:0.9.7'],
-  ['mobile-dev', 'notification-worker', 1, 1, 'registry.local/mobile/notify:1.2.1'],
-  ['mobile-dev', 'cards-service', 2, 0, 'registry.local/mobile/cards:3.0.0-rc1'],
-  ['mobile-api', 'bff-android', 2, 2, 'registry.local/mobile/bff:5.1.0'],
-  ['mobile-api', 'bff-ios', 2, 2, 'registry.local/mobile/bff:5.1.0'],
+  ['apps-dev', 'web-gateway', 3, 3, 'registry.local/apps/gateway:1.14.2'],
+  ['apps-dev', 'auth-service', 2, 2, 'registry.local/apps/auth:2.3.0'],
+  ['apps-dev', 'orders-service', 2, 1, 'registry.local/apps/orders:0.9.7'],
+  ['apps-dev', 'notification-worker', 1, 1, 'registry.local/apps/notify:1.2.1'],
+  ['apps-dev', 'search-service', 2, 0, 'registry.local/apps/search:3.0.0-rc1'],
+  ['apps-staging', 'web-frontend', 2, 2, 'registry.local/apps/frontend:5.1.0'],
+  ['apps-staging', 'admin-panel', 2, 2, 'registry.local/apps/admin:2.0.4'],
   ['monitoring', 'grafana', 1, 1, 'grafana/grafana:11.2.0'],
   ['monitoring', 'prometheus-server', 1, 1, 'prom/prometheus:v2.54.1'],
   ['ingress-nginx', 'ingress-nginx-controller', 2, 2, 'registry.k8s.io/ingress-nginx/controller:v1.11.2'],
   ['kube-system', 'coredns', 2, 2, 'registry.k8s.io/coredns/coredns:v1.11.1'],
 ].map(([namespace, name, replicas, ready, image], i) => ({
   namespace, name, replicas, ready, updated: replicas, available: ready, images: [image], created: ago(60 * 24 * (i + 2)),
-  argocd: namespace.startsWith('mobile') ? name : null,
+  argocd: namespace.startsWith('apps') ? name : null,
 }));
 
 const nodes = ['dev-master-01', 'dev-worker-01', 'dev-worker-02', 'dev-worker-03'];
@@ -29,7 +29,7 @@ for (const d of deployments) {
   for (let i = 0; i < Math.max(d.replicas, 1); i++) {
     const h = rnd(d.name + ':' + i * 7919);
     const suffix = h.toString(36).slice(0, 5);
-    let status = i < d.ready ? 'Running' : (d.name === 'cards-service' ? 'CrashLoopBackOff' : 'Pending');
+    let status = i < d.ready ? 'Running' : (d.name === 'search-service' ? 'CrashLoopBackOff' : 'Pending');
     if (d.replicas === 0) status = 'Completed';
     pods.push({
       name: `${d.name}-${rnd(d.name).toString(36).slice(0, 9)}-${suffix}${i}`,
@@ -49,7 +49,7 @@ for (const d of deployments) {
       memReq: d.name.includes('gateway') ? 256 * 2 ** 20 : null,
       memLim: d.name === 'grafana' ? 512 * 2 ** 20 : null,
       lastTerm: status === 'CrashLoopBackOff' ? { container: d.name, reason: 'Error', exitCode: 1, at: ago(2) }
-        : d.name === 'payments-service' && i === 0 ? { container: d.name, reason: 'OOMKilled', exitCode: 137, at: ago(40) } : null,
+        : d.name === 'orders-service' && i === 0 ? { container: d.name, reason: 'OOMKilled', exitCode: 137, at: ago(40) } : null,
     });
   }
 }
@@ -60,24 +60,24 @@ const baseCpu = (p) => ((rnd(p.name) % 400) + 5) / 1000;
 let tick = 0;
 
 const statefulsets = [
-  { namespace: 'mobile-dev', name: 'redis', replicas: 3, ready: 3, images: ['redis:7.2-alpine'], created: ago(60 * 24 * 30) },
+  { namespace: 'apps-dev', name: 'redis', replicas: 3, ready: 3, images: ['redis:7.2-alpine'], created: ago(60 * 24 * 30) },
   { namespace: 'monitoring', name: 'loki', replicas: 1, ready: 1, images: ['grafana/loki:3.1.0'], created: ago(60 * 24 * 20) },
 ];
 const daemonsets = [
   { namespace: 'monitoring', name: 'node-exporter', desired: 4, ready: 4, images: ['prom/node-exporter:v1.8.2'], created: ago(60 * 24 * 90) },
 ];
 const jobs = [
-  { namespace: 'mobile-dev', name: 'db-migrate-1131', status: 'Completed', completions: '1/1', duration: 42, created: ago(300) },
-  { namespace: 'mobile-dev', name: 'report-export-28801', status: 'Failed', completions: '0/1', duration: 610, created: ago(90) },
+  { namespace: 'apps-dev', name: 'db-migrate-1131', status: 'Completed', completions: '1/1', duration: 42, created: ago(300) },
+  { namespace: 'apps-dev', name: 'report-export-28801', status: 'Failed', completions: '0/1', duration: 610, created: ago(90) },
 ];
 const cronjobs = [
-  { namespace: 'mobile-dev', name: 'report-export', schedule: '0 */6 * * *', suspend: false, active: 0, lastRun: ago(90), created: ago(60 * 24 * 40) },
+  { namespace: 'apps-dev', name: 'report-export', schedule: '0 */6 * * *', suspend: false, active: 0, lastRun: ago(90), created: ago(60 * 24 * 40) },
 ];
-const configmaps = deployments.filter((d) => d.namespace === 'mobile-dev').map((d) => ({
+const configmaps = deployments.filter((d) => d.namespace === 'apps-dev').map((d) => ({
   namespace: d.namespace, name: d.name + '-config', keys: 2, keyNames: 'application.yml, logback.xml', created: d.created,
 }));
 const pvcs = [
-  { namespace: 'mobile-dev', name: 'data-redis-0', status: 'Bound', capacity: '8Gi', storageClass: 'longhorn', access: 'ReadWriteOnce', volume: 'pvc-1f2e', created: ago(60 * 24 * 30) },
+  { namespace: 'apps-dev', name: 'data-redis-0', status: 'Bound', capacity: '8Gi', storageClass: 'longhorn', access: 'ReadWriteOnce', volume: 'pvc-1f2e', created: ago(60 * 24 * 30) },
   { namespace: 'monitoring', name: 'storage-loki-0', status: 'Bound', capacity: '50Gi', storageClass: 'longhorn', access: 'ReadWriteOnce', volume: 'pvc-9a8b', created: ago(60 * 24 * 20) },
 ];
 
@@ -92,16 +92,16 @@ const services = deployments.map((d, i) => ({
 }));
 
 const ingresses = [
-  { namespace: 'mobile-dev', name: 'mobile-gateway', className: 'nginx', hosts: 'mobile-dev.example.local', address: '192.168.10.50', created: ago(9000) },
-  { namespace: 'mobile-api', name: 'bff', className: 'nginx', hosts: 'bff-dev.example.local', address: '192.168.10.50', created: ago(8000) },
+  { namespace: 'apps-dev', name: 'web-gateway', className: 'nginx', hosts: 'api-dev.example.local', address: '192.168.10.50', created: ago(9000) },
+  { namespace: 'apps-staging', name: 'frontend', className: 'nginx', hosts: 'app-staging.example.local', address: '192.168.10.50', created: ago(8000) },
   { namespace: 'monitoring', name: 'grafana', className: 'nginx', hosts: 'grafana-dev.example.local', address: '192.168.10.50', created: ago(20000) },
 ];
 
 const events = [
-  { namespace: 'mobile-dev', type: 'Warning', reason: 'BackOff', object: 'Pod/' + pods.find((p) => p.status === 'CrashLoopBackOff')?.name, message: 'Back-off restarting failed container cards-service', count: 87, last: ago(1) },
-  { namespace: 'mobile-dev', type: 'Warning', reason: 'FailedScheduling', object: 'Pod/' + pods.find((p) => p.status === 'Pending')?.name, message: '0/4 nodes are available: 3 Insufficient memory, 1 node(s) had untolerated taint.', count: 12, last: ago(3) },
-  { namespace: 'mobile-dev', type: 'Normal', reason: 'ScalingReplicaSet', object: 'Deployment/payments-service', message: 'Scaled up replica set payments-service-7c9d to 2', count: 1, last: ago(4) },
-  { namespace: 'mobile-dev', type: 'Normal', reason: 'Pulled', object: 'Pod/' + pods[0].name, message: 'Container image "registry.local/mobile/gateway:1.14.2" already present on machine', count: 1, last: ago(25) },
+  { namespace: 'apps-dev', type: 'Warning', reason: 'BackOff', object: 'Pod/' + pods.find((p) => p.status === 'CrashLoopBackOff')?.name, message: 'Back-off restarting failed container search-service', count: 87, last: ago(1) },
+  { namespace: 'apps-dev', type: 'Warning', reason: 'FailedScheduling', object: 'Pod/' + pods.find((p) => p.status === 'Pending')?.name, message: '0/4 nodes are available: 3 Insufficient memory, 1 node(s) had untolerated taint.', count: 12, last: ago(3) },
+  { namespace: 'apps-dev', type: 'Normal', reason: 'ScalingReplicaSet', object: 'Deployment/orders-service', message: 'Scaled up replica set orders-service-7c9d to 2', count: 1, last: ago(4) },
+  { namespace: 'apps-dev', type: 'Normal', reason: 'Pulled', object: 'Pod/' + pods[0].name, message: 'Container image "registry.local/apps/gateway:1.14.2" already present on machine', count: 1, last: ago(25) },
   { namespace: 'monitoring', type: 'Normal', reason: 'Started', object: 'Pod/' + pods.find((p) => p.namespace === 'monitoring').name, message: 'Started container grafana', count: 1, last: ago(60) },
 ];
 
@@ -110,10 +110,10 @@ const byNs = (arr, ns) => (ns === '_all' ? arr : arr.filter((x) => x.namespace =
 const logText = (pod) => {
   if (pod.status === 'CrashLoopBackOff') {
     return [
-      '2026-11-20T05:01:12.331Z INFO  Starting cards-service v3.0.0-rc1',
+      '2026-11-20T05:01:12.331Z INFO  Starting search-service v3.0.0-rc1',
       '2026-11-20T05:01:12.902Z INFO  Loading config from /etc/config/application.yml',
       '2026-11-20T05:01:13.118Z WARN  DB_POOL_SIZE not set, using default 10',
-      '2026-11-20T05:01:14.507Z ERROR Failed to connect to postgres://cards-db:5432 - connection refused',
+      '2026-11-20T05:01:14.507Z ERROR Failed to connect to postgres://search-db:5432 - connection refused',
       '2026-11-20T05:01:14.508Z ERROR Application startup failed',
       'Exception in thread "main" java.net.ConnectException: Connection refused',
       '    at org.postgresql.core.v3.ConnectionFactoryImpl.openConnectionImpl(ConnectionFactoryImpl.java:319)',
@@ -122,16 +122,16 @@ const logText = (pod) => {
   const lines = [];
   for (let i = 40; i > 0; i--) {
     const t = new Date(now - i * 4000).toISOString();
-    const path = ['/api/v1/accounts', '/api/v1/cards', '/health', '/api/v1/transfers', '/api/v1/profile'][i % 5];
+    const path = ['/api/v1/orders', '/api/v1/products', '/health', '/api/v1/search', '/api/v1/users'][i % 5];
     lines.push(`${t} INFO  ${['GET', 'POST'][i % 2]} ${path} ${i % 11 === 0 ? 500 : 200} ${(i * 7) % 90 + 3}ms`);
   }
   return lines.join('\n');
 };
 
 export function demo(app) {
-  let currentContext = 'dev-cluster-mobile-dev';
+  let currentContext = 'dev-cluster-apps';
   const contexts = [
-    { name: 'dev-cluster-mobile-dev', cluster: 'dev-cluster', user: 'mobile-dev-user', namespace: 'mobile-dev' },
+    { name: 'dev-cluster-apps', cluster: 'dev-cluster', user: 'demo-user', namespace: 'apps-dev' },
     { name: 'dev-cluster-admin', cluster: 'dev-cluster', user: 'admin', namespace: 'default' },
   ];
 
@@ -155,8 +155,8 @@ export function demo(app) {
     res.json(byNs(pods, req.params.ns).filter((p) => p.status === 'Running').map((p) => ({
       name: p.name, namespace: p.namespace,
       cpu: baseCpu(p) * (0.6 + Math.random() * 0.8),
-      // payments-service slowly "leaks" so its trend line climbs
-      memory: baseMem(p) * (p.name.startsWith('payments') ? 1 + tick * 0.03 : 0.95 + Math.random() * 0.1),
+      // orders-service slowly "leaks" so its trend line climbs
+      memory: baseMem(p) * (p.name.startsWith('orders') ? 1 + tick * 0.03 : 0.95 + Math.random() * 0.1),
     })));
   });
   app.get('/api/:ns/statefulsets', (req, res) => res.json(byNs(statefulsets, req.params.ns)));

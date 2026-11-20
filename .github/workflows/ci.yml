@@ -28,8 +28,8 @@ jobs:
           DEMO=1 node server.js > server.log 2>&1 &
           for i in $(seq 1 20); do curl -sf http://127.0.0.1:9901/api/health && break; sleep 0.5; done
           curl -sf http://127.0.0.1:9901/api/info | grep -q '"demo":true'
-          curl -sf http://127.0.0.1:9901/api/mobile-dev/pods | grep -q '"name"'
-          curl -sf http://127.0.0.1:9901/api/mobile-dev/metrics | grep -q '"memory"'
+          curl -sf http://127.0.0.1:9901/api/apps-dev/pods | grep -q '"name"'
+          curl -sf http://127.0.0.1:9901/api/apps-dev/metrics | grep -q '"memory"'
           curl -sf http://127.0.0.1:9901/ | grep -q 'Anchor K8s'
       - name: Server log
         if: failure()
