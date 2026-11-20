@@ -145,6 +145,26 @@ td .muted, .muted { color: var(--muted); }
 .code > div:hover { background: rgba(255,255,255,.04); }
 .code .e { color: #ff8a8a; } .code .w { color: #f2c46d; } .code .note { color: #7c8a99; font-style: italic; }
 .code mark { background: #f2c46d; color: #111; border-radius: 2px; }
+/* Spring Boot console style (log view): date faint, level colored, logger cyan, exception red */
+.code { tab-size: 4; }
+.code .ent.err { background: rgba(255,90,90,.07); }
+.code .ent.err:hover { background: rgba(255,90,90,.11); }
+.code .c-ts, .code .c-dim { color: #7c8a99; }
+.code .c-kts { color: #5d6b7a; }
+.code .c-lv { font-weight: 600; }
+.code .l-info, .code .l-debug, .code .l-trace { color: #3ccf7e; }
+.code .l-warn { color: #f2c46d; }
+.code .l-error { color: #ff6b6b; }
+.code .c-pid { color: #d38cf0; }
+.code .c-lg { color: #4fc1d9; }
+.code .c-sum { color: #e6c07b; }
+.code .c-err, .code .c-exc-h { color: #ff8a8a; }
+.code .c-exc { display: block; }
+.code .c-frame { color: #7c8a99; }
+.code .lj { color: #8b95a3; cursor: pointer; }
+.code .lj:hover { color: #c3cbd4; }
+.code .lj-full { display: block; margin: 2px 0 6px 2ch; padding: 6px 10px; border-left: 2px solid #2a3440; background: rgba(255,255,255,.03); }
+.code .j-k { color: #79b8ff; } .code .j-s { color: #9ecb7a; } .code .j-n { color: #f0a35e; } .code .j-b { color: #c792ea; }
 .jump { position: absolute; right: 22px; bottom: 16px; display: none; box-shadow: 0 4px 14px rgba(0,0,0,.35); }
 .jump.show { display: inline-block; }
 .live { display: none; align-items: center; gap: 6px; font-size: 12px; color: var(--ok); font-weight: 600; }
@@ -252,6 +272,7 @@ td .muted, .muted { color: var(--muted); }
     <select id="dAuto" data-i18n-title="log.autoSel"></select>
     <label title="--timestamps"><input type="checkbox" id="dTs"> <span data-i18n="log.ts"></span></label>
     <label data-i18n-title="log.prevTitle"><input type="checkbox" id="dPrev"> <span data-i18n="log.prev"></span></label>
+    <label data-i18n-title="log.prettyTitle"><input type="checkbox" id="dPretty" checked> <span data-i18n="log.pretty"></span></label>
     <label><input type="checkbox" id="dWrap" checked> <span data-i18n="log.wrap"></span></label>
     <label data-i18n-title="log.onlyTitle"><input type="checkbox" id="dOnly" checked> <span data-i18n="log.only"></span></label>
     <input type="search" id="dFilter" data-i18n-ph="log.filter">
@@ -302,6 +323,7 @@ const I18N = {
     'log.ts': 'Vaqt', 'log.prev': 'Oldingi', 'log.prevTitle': '--previous: oldingi (qulagan) container loglari', 'log.wrap': 'Wrap',
     'log.only': 'Filtr', 'log.onlyTitle': "Faqat mos qatorlarni ko'rsatish", 'log.filter': 'Logdan qidirish…  (Ctrl+F)', 'log.jump': '↓ Oxiriga',
     'log.lines': '{n} qator', 'log.matches': '{n} mos', 'log.noMatch': "Mos qator yo'q", 'log.empty': "(log bo'sh)", 'loading': 'Yuklanmoqda…',
+    'log.pretty': 'Spring', 'log.prettyTitle': "Loglarni Spring Boot konsoli ko'rinishida chiqarish (JSON → o'qiladigan qator). O'chirilsa: xom log", 'log.expand': "JSON'ni ochish / yopish",
     'toast.copied': 'Nusxa olindi', 'toast.deleted': "Pod o'chirildi", 'toast.restartedPod': 'Pod restart qilindi', 'toast.restarting': 'Restart boshlandi',
     'confirm.delpod': "\"{name}\" podini o'chirasizmi?\n(Deployment bo'lsa, yangisi avtomatik yaratiladi)",
     'confirm.restartpod': "\"{name}\" podini restart qilasizmi?\n(Pod o'chiriladi, controller yangisini yaratadi)",
@@ -335,6 +357,7 @@ const I18N = {
     'log.ts': 'Время', 'log.prev': 'Предыдущий', 'log.prevTitle': '--previous: логи предыдущего (упавшего) контейнера', 'log.wrap': 'Перенос',
     'log.only': 'Фильтр', 'log.onlyTitle': 'Показывать только совпадения', 'log.filter': 'Поиск в логах…  (Ctrl+F)', 'log.jump': '↓ В конец',
     'log.lines': '{n} строк', 'log.matches': 'совпадений: {n}', 'log.noMatch': 'Нет совпадений', 'log.empty': '(лог пуст)', 'loading': 'Загрузка…',
+    'log.pretty': 'Spring', 'log.prettyTitle': 'Показывать логи как консоль Spring Boot (JSON → читаемая строка). Выкл.: сырой лог', 'log.expand': 'Развернуть / свернуть JSON',
     'toast.copied': 'Скопировано', 'toast.deleted': 'Под удалён', 'toast.restartedPod': 'Под перезапущен', 'toast.restarting': 'Перезапуск начат',
     'confirm.delpod': 'Удалить под "{name}"?\n(Если он из Deployment, новый создастся автоматически)',
     'confirm.restartpod': 'Перезапустить под "{name}"?\n(Под будет удалён, контроллер создаст новый)',
@@ -368,6 +391,7 @@ const I18N = {
     'log.ts': 'Time', 'log.prev': 'Previous', 'log.prevTitle': '--previous: logs of the previous (crashed) container', 'log.wrap': 'Wrap',
     'log.only': 'Filter', 'log.onlyTitle': 'Show matching lines only', 'log.filter': 'Search logs…  (Ctrl+F)', 'log.jump': '↓ To bottom',
     'log.lines': '{n} lines', 'log.matches': '{n} matches', 'log.noMatch': 'No matching lines', 'log.empty': '(log is empty)', 'loading': 'Loading…',
+    'log.pretty': 'Spring', 'log.prettyTitle': 'Show logs like the Spring Boot console (JSON → readable line). Off: raw log', 'log.expand': 'Expand / collapse JSON',
     'toast.copied': 'Copied', 'toast.deleted': 'Pod deleted', 'toast.restartedPod': 'Pod restarted', 'toast.restarting': 'Restart started',
     'confirm.delpod': 'Delete pod "{name}"?\n(If it belongs to a Deployment, a new one is created automatically)',
     'confirm.restartpod': 'Restart pod "{name}"?\n(The pod is deleted and its controller creates a new one)',
@@ -614,7 +638,7 @@ document.addEventListener('visibilitychange', () => {
 });
 
 // ---------- drawer ----------
-const D = { kind: null, ns: null, name: null, text: '', lines: [], timer: null, req: 0 };
+const D = { kind: null, ns: null, name: null, text: '', lines: [], timer: null, req: 0, app: '', open: new Set() };
 const RE_ERR = /\b(ERROR|FATAL|CRITICAL|Exception|panic)\b/i, RE_WARN = /\bWARN(ING)?\b/i;
 const isLogs = () => D.kind === 'logs';
 
@@ -628,6 +652,190 @@ function hl(l, q) {
 function lineHTML(l, q) {
   const cls = RE_ERR.test(l) ? 'e' : RE_WARN.test(l) ? 'w' : '';
   return `<div${cls ? ` class="${cls}"` : ''}>${hl(l, q)}</div>`;
+}
+
+// ---------- Spring Boot style log view ----------
+// JSON lines (logstash encoder, log4j2 JsonLayout, {"@timestamp","message":{...}}) are rendered like
+// Spring Boot's console:  <date>  LEVEL --- [app] [thread] logger : message  (+ payload, + stack trace).
+// Plain text lines keep their text: ANSI colors are applied, Spring Boot text lines and stack frames are colored.
+const RE_KTS = /^(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?(?:Z|[+-]\d\d:?\d\d)) ([\s\S]*)$/; // kubectl --timestamps prefix
+const RE_SPRING = /^(\d{4}-\d\d-\d\d[T ]\d\d:\d\d:\d\d[.,]\d+\S*)(\s+)(TRACE|DEBUG|INFO|WARN|ERROR|FATAL)(\s+)(\d+\s+)?(---\s+(?:\[[^\]]*\]\s*)+)(\S+)(\s+:\s?)([\s\S]*)$/;
+const RE_FRAME = /^\s+(at |\.\.\. \d+ (more|common))/, RE_EXC_HEAD = /^(Caused by: |Suppressed: |[\w$]+(\.[\w$]+)+(Exception|Error)\b)/;
+const LEVEL_ALIAS = { WARNING: 'WARN', CRITICAL: 'ERROR', FATAL: 'ERROR', ERR: 'ERROR', INFORMATION: 'INFO' };
+const KNOWN_KEYS = new Set(['@timestamp', 'timestamp', 'time', 'ts', '@version', 'timeMillis', 'instant', 'level', 'logLevel', 'severity',
+  'level_value', 'thread', 'threadName', 'thread_name', 'threadId', 'threadPriority', 'loggerName', 'logger_name', 'logger',
+  'loggerFqcn', 'endOfBatch', 'message', 'msg', 'exception', 'thrown', 'stack_trace', 'source', 'contextMap', 'mdc']);
+const LOG_CACHE = new Map(); // raw line -> parsed entry (lines repeat on every auto-refresh)
+
+const pad2 = (n, w = 2) => String(n).padStart(w, '0');
+function fmtMillis(ms) {
+  const d = new Date(ms);
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}.${pad2(d.getMilliseconds(), 3)}`;
+}
+function normTs(ts) {
+  if (ts == null || ts === '') return '';
+  if (typeof ts === 'number') return fmtMillis(ts < 1e12 ? ts * 1000 : ts);
+  const m = /^(\d{4}-\d\d-\d\d)[T ](\d\d:\d\d:\d\d)(?:[.,](\d+))?(.*)$/.exec(String(ts));
+  return m ? `${m[1]}T${m[2]}.${(m[3] || '').padEnd(3, '0').slice(0, 3)}${m[4]}` : String(ts);
+}
+// Logback %logger{39}: shorten packages to their first letter, left to right, until it fits
+function abbrevLogger(name, max = 39) {
+  const parts = String(name).split('.');
+  for (let i = 0; i < parts.length - 1 && parts.join('.').length > max; i++) parts[i] = parts[i][0] || '';
+  return parts.join('.');
+}
+// exception object (logstash / log4j2 thrown / serialized Java Throwable) -> Java-style stack trace text
+function excText(e, depth = 0) {
+  if (!e || depth > 6) return '';
+  if (typeof e === 'string') return e;
+  if (typeof e !== 'object') return '';
+  const head = [e.type || e.name || e.exceptionType || e.className || e.class, e.message ?? e.localizedMessage].filter(Boolean).join(': ');
+  let st = e.stackTrace ?? e.stacktrace ?? e.extendedStackTrace ?? e.stack_trace ?? e.stack ?? '';
+  if (Array.isArray(st)) {
+    st = st.map((f) => (typeof f === 'string' ? f : `\tat ${f.className || f.class || '?'}.${f.methodName || f.method || '?'}(${f.fileName || f.file || 'Unknown Source'}${(f.lineNumber ?? f.line) > 0 ? ':' + (f.lineNumber ?? f.line) : ''})`)).join('\n');
+  } else if (typeof st !== 'string') st = '';
+  let out = head && st.startsWith(head) ? st : [head, st].filter(Boolean).join('\n');
+  const cause = e.cause && typeof e.cause === 'object' ? excText(e.cause, depth + 1) : '';
+  if (cause) out += '\nCaused by: ' + cause;
+  return out;
+}
+
+function parseLog(raw) {
+  let e = LOG_CACHE.get(raw);
+  if (e) return e;
+  if (LOG_CACHE.size > 60000) LOG_CACHE.clear();
+  e = parseLogUncached(raw);
+  LOG_CACHE.set(raw, e);
+  return e;
+}
+function parseLogUncached(raw) {
+  let kts = '', body = raw;
+  const km = RE_KTS.exec(raw);
+  if (km) { kts = km[1]; body = km[2]; }
+  const s = body.trim();
+  let o = null;
+  if (s[0] === '{') { try { o = JSON.parse(s); } catch { /* not JSON */ } }
+  if (!o || typeof o !== 'object' || Array.isArray(o)) return { json: false, kts, text: body };
+
+  const pick = (...ks) => { for (const k of ks) if (o[k] != null && o[k] !== '') return o[k]; return undefined; };
+  let ts = pick('@timestamp', 'timestamp', 'time', 'ts');
+  if (ts == null && o.timeMillis) ts = o.timeMillis;
+  if (ts == null && o.instant?.epochSecond) ts = o.instant.epochSecond * 1000 + Math.floor((o.instant.nanoOfSecond || 0) / 1e6);
+  let level = String(pick('level', 'logLevel', 'severity') || '').toUpperCase();
+  level = LEVEL_ALIAS[level] || level;
+  const e = { json: true, kts, ts: normTs(ts), level, thread: pick('thread', 'threadName', 'thread_name') || '', logger: pick('loggerName', 'logger_name', 'logger') || '',
+    text: '', summary: '', err: '', exc: excText(o.exception) || excText(o.thrown) || (typeof o.stack_trace === 'string' ? o.stack_trace : ''), rest: null, restStr: '' };
+
+  let httpStatus = 0;
+  const msg = o.message ?? o.msg ?? '';
+  if (msg && typeof msg === 'object' && !Array.isArray(msg)) {
+    let m = { ...msg };
+    const keys = Object.keys(m);
+    if (typeof m.message === 'string') { e.text = m.message; delete m.message; }
+    else if (typeof m.http === 'string') {
+      e.text = [m.http, m.method, m.path || m.uri, m.status].filter(Boolean).join(' ');
+      httpStatus = parseInt(m.status, 10) || 0;
+      for (const k of ['http', 'method', 'path', 'status']) delete m[k];
+    } else if (keys.length === 1 && keys[0].startsWith('#')) {
+      e.text = keys[0]; m = m[keys[0]];
+      if (!m || typeof m !== 'object') { if (m != null) e.text += ' ' + m; m = null; }
+    }
+    if (m) {
+      const mi = m.data?.metaInfo || m.metaInfo;
+      if (mi && typeof mi === 'object') {
+        const op = mi.target && mi.method ? `${mi.target}.${mi.method}` : mi.target || mi.method || '';
+        e.summary = [m.data?.type || m.type, op].filter((x) => typeof x === 'string' && x).join(' ');
+      }
+      if (m.error) e.err = typeof m.error === 'string' ? m.error : String(m.error.message || m.error.code || m.error.errorMessage || '');
+      const st = m.stackTrace ?? m.stacktrace;
+      if (st && (typeof st === 'string' || Array.isArray(st)) && st.length) {
+        if (!e.exc) e.exc = excText({ type: m.exceptionType, message: m.exceptionType ? (msg.message ?? m.localizedMessage) : '', stackTrace: st, cause: m.cause });
+        delete m.stackTrace; delete m.stacktrace;
+      }
+      e.rest = m;
+    }
+  } else {
+    e.text = typeof msg === 'string' ? msg : JSON.stringify(msg);
+    const extra = Object.fromEntries(Object.entries(o).filter(([k, v]) => !KNOWN_KEYS.has(k) && v != null && v !== ''));
+    for (const k of ['contextMap', 'mdc']) if (o[k] && typeof o[k] === 'object' && Object.keys(o[k]).length) extra[k] = o[k];
+    if (Object.keys(extra).length) e.rest = extra;
+  }
+  if (e.rest && typeof e.rest === 'object' && Object.keys(e.rest).length) e.restStr = JSON.stringify(e.rest);
+  else e.rest = null;
+  if (!e.level) e.level = e.exc || e.err || httpStatus >= 500 ? 'ERROR' : httpStatus >= 400 ? 'WARN' : 'INFO';
+  return e;
+}
+
+const seg = (cls, s, q) => (s ? `<span class="${cls}">${hl(s, q)}</span>` : '');
+const RE_JTOK = /("(?:\\.|[^"\\])*")(\s*:)?|\b(?:true|false|null)\b|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/g;
+function jsonHTML(s, q) {
+  let out = '', i = 0, m;
+  RE_JTOK.lastIndex = 0;
+  while ((m = RE_JTOK.exec(s))) {
+    out += hl(s.slice(i, m.index), q);
+    if (m[1] && m[2]) out += seg('j-k', m[1], q) + hl(m[2], q);
+    else out += seg(m[1] ? 'j-s' : /^[tfn]/.test(m[0]) ? 'j-b' : 'j-n', m[0], q);
+    i = m.index + m[0].length;
+  }
+  return out + hl(s.slice(i), q);
+}
+const excHTML = (s, q) => s.split('\n').map((l) => seg(RE_FRAME.test(l) ? 'c-frame' : 'c-exc-h', l, q)).join('\n');
+
+const ANSI_FG = { 30: '#5c6370', 31: '#ff6b6b', 32: '#3ccf7e', 33: '#f2c46d', 34: '#61afef', 35: '#d38cf0', 36: '#4fc1d9', 37: '#d6dde4',
+  90: '#7c8a99', 91: '#ff8a8a', 92: '#7ee2a8', 93: '#ffd88a', 94: '#8cc4ff', 95: '#e2a8f5', 96: '#7fdcef', 97: '#ffffff' };
+function ansiHTML(s, q) {
+  const re = /\x1b\[([0-9;]*)m/g;
+  let out = '', i = 0, m, fg = null, bold = false, faint = false;
+  const push = (txt) => {
+    if (!txt) return;
+    const css = [fg && `color:${fg}`, bold && 'font-weight:600', faint && 'opacity:.65'].filter(Boolean).join(';');
+    out += css ? `<span style="${css}">${hl(txt, q)}</span>` : hl(txt, q);
+  };
+  while ((m = re.exec(s))) {
+    push(s.slice(i, m.index)); i = re.lastIndex;
+    for (const c of (m[1] || '0').split(';').map(Number)) {
+      if (c === 0) { fg = null; bold = faint = false; } else if (c === 1) bold = true; else if (c === 2) faint = true;
+      else if (c === 22) bold = faint = false; else if (c === 39) fg = null; else if (ANSI_FG[c]) fg = ANSI_FG[c];
+    }
+  }
+  push(s.slice(i));
+  return out;
+}
+function plainHTML(e, q) {
+  const s = e.text, pre = seg('c-kts', e.kts, q) + (e.kts ? ' ' : '');
+  if (s.includes('\x1b[')) return { html: pre + ansiHTML(s, q), err: false };
+  const m = RE_SPRING.exec(s);
+  if (m) {
+    const lv = LEVEL_ALIAS[m[3]] || m[3];
+    return { html: pre + seg('c-ts', m[1], q) + hl(m[2], q) + seg(`c-lv l-${lv.toLowerCase()}`, m[3], q) + hl(m[4], q) + seg('c-pid', m[5], q)
+      + seg('c-dim', m[6], q) + seg('c-lg', m[7], q) + seg('c-dim', m[8], q) + hl(m[9], q), err: lv === 'ERROR' };
+  }
+  if (RE_FRAME.test(s)) return { html: pre + seg('c-frame', s, q), err: false };
+  if (RE_EXC_HEAD.test(s)) return { html: pre + seg('c-exc-h', s, q), err: true };
+  const cls = RE_ERR.test(s) ? 'e' : RE_WARN.test(s) ? 'w' : '';
+  return { html: pre + (cls ? seg(cls, s, q) : hl(s, q)), err: false };
+}
+function prettyHTML(raw, i, q, app) {
+  const e = parseLog(raw);
+  if (!e.json) { const p = plainHTML(e, q); return `<div class="ent${p.err ? ' err' : ''}">${p.html}</div>`; }
+  const lv = e.level, thread = e.thread.length > 15 ? e.thread.slice(-15) : e.thread.padStart(15);
+  let h = seg('c-kts', e.kts, q) + (e.kts ? ' ' : '') + seg('c-ts', e.ts, q) + (e.ts ? ' ' : '');
+  h += seg(`c-lv l-${lv.toLowerCase()}`, lv.padStart(5), q) + ' ';
+  h += seg('c-dim', '--- ' + (app ? `[${app}] ` : '') + (e.thread ? `[${thread}] ` : ''), q);
+  if (e.logger) h += `<span class="c-lg" title="${esc(e.logger)}">${hl(abbrevLogger(e.logger).padEnd(40), q)}</span> `;
+  h += seg('c-dim', ':', '') + ' ' + hl(e.text, q) + (e.summary ? ' ' + seg('c-sum', e.summary, q) : '') + (e.err ? ' ' + seg('c-err', e.err, q) : '');
+  if (e.restStr) {
+    const preview = e.restStr.length > 110 ? e.restStr.slice(0, 110) + '…' : e.restStr;
+    const ql = q && q.toLowerCase();
+    // a search hit hidden inside the payload opens it, so the match is visible
+    const open = D.open.has(raw) || (ql && !preview.toLowerCase().includes(ql) && e.restStr.toLowerCase().includes(ql));
+    const tip = esc(t('log.expand'));
+    h += open
+      ? ` <span class="lj" title="${tip}">▾</span><span class="lj-full">${jsonHTML(JSON.stringify(e.rest, null, 2), q)}</span>`
+      : ` <span class="lj" title="${tip}">▸ ${hl(preview, q)}</span>`;
+  }
+  if (e.exc) h += `<span class="c-exc">${excHTML(e.exc, q)}</span>`;
+  return `<div class="ent${lv === 'ERROR' ? ' err' : ''}" data-i="${i}">${h}</div>`;
 }
 const filterQ = () => $('#dFilter').value;
 const visible = (l, q) => !q || !$('#dOnly').checked || l.toLowerCase().includes(q.toLowerCase());
@@ -643,7 +851,8 @@ function updateStat(time) {
 }
 function renderLog() {
   const q = filterQ();
-  const html = D.lines.filter((l) => visible(l, q)).map((l) => lineHTML(l, q)).join('');
+  const pretty = $('#dPretty').checked, app = $('#dContainer').value || D.app;
+  const html = D.lines.map((l, i) => (!visible(l, q) ? '' : pretty ? prettyHTML(l, i, q, app) : lineHTML(l, q))).join('');
   $('#dBody').innerHTML = html || `<div class="note">${D.lines.length ? t('log.noMatch') : t('log.empty')}</div>`;
   updateStat();
 }
@@ -688,7 +897,7 @@ async function drawerLoad() {
 const drawerTitle = () => (isLogs() ? t('log.title') : 'YAML') + ' · ' + D.name;
 function openDrawer(kind, ns, name) {
   stopLogs();
-  Object.assign(D, { kind, ns, name, lines: [], text: '', updated: null });
+  Object.assign(D, { kind, ns, name, lines: [], text: '', updated: null, open: new Set() });
   const log = isLogs();
   $('#dTitle').textContent = drawerTitle();
   $('#dTools').hidden = !log;
@@ -696,6 +905,7 @@ function openDrawer(kind, ns, name) {
   $('#dStat').textContent = '';
   const pod = (S.data.pods || []).find((p) => p.name === name && p.namespace === ns);
   const cs = log && pod ? pod.containers : [];
+  D.app = cs[0] || '';
   $('#dContainer').hidden = cs.length < 2;
   $('#dContainer').innerHTML = cs.map((c) => `<option>${esc(c)}</option>`).join('');
   $('#dPrev').checked = false;
@@ -714,6 +924,17 @@ $('#dReload').addEventListener('click', () => (isLogs() ? loadLogs() : drawerLoa
 ['#dTail', '#dTs', '#dContainer', '#dPrev'].forEach((s) => $(s).addEventListener('change', drawerLoad));
 $('#dAuto').addEventListener('change', () => { store.set('logAuto', $('#dAuto').value); setLogAuto(); });
 $('#dWrap').addEventListener('change', () => $('#dBody').classList.toggle('nowrap', !$('#dWrap').checked));
+$('#dPretty').checked = store.get('logPretty') !== '0';
+$('#dPretty').addEventListener('change', () => { store.set('logPretty', $('#dPretty').checked ? '1' : '0'); if (isLogs()) renderLog(); });
+// ▸ / ▾ toggles the pretty-printed JSON payload of one log line
+$('#dBody').addEventListener('click', (ev) => {
+  const row = ev.target.closest('.lj')?.closest('[data-i]');
+  const raw = row && D.lines[Number(row.dataset.i)];
+  if (raw == null) return;
+  if (D.open.has(raw)) D.open.delete(raw); else D.open.add(raw);
+  row.outerHTML = prettyHTML(raw, Number(row.dataset.i), filterQ(), $('#dContainer').value || D.app);
+  updateJump();
+});
 $('#dFilter').addEventListener('input', () => { renderLog(); scrollEnd(); updateJump(); });
 $('#dOnly').addEventListener('change', () => { renderLog(); scrollEnd(); });
 $('#dBody').addEventListener('scroll', updateJump);
