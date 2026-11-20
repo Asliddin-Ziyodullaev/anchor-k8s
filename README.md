@@ -12,6 +12,7 @@ A lightweight web dashboard for Kubernetes that connects through a kubeconfig. O
 - Pods, Deployments, Services, Ingresses, Events, Nodes, with search, sorting and auto-refresh
 - Overview of unhealthy pods and recent warnings
 - **Pod logs**: `--tail`, `--timestamps`, `--previous`, container picker, auto-refresh, search and filter, download, fullscreen
+- **Spring Boot log view**: JSON log lines are shown like the Spring Boot console, with colored levels, abbreviated loggers, expandable payloads and stack traces ([details](#spring-boot-log-view))
 - **Pod restart** (the pod is deleted and its controller creates a new one) and pod delete
 - **Deployment restart** (same as `kubectl rollout restart`) and scale
 - YAML view
@@ -54,6 +55,23 @@ Without the script: `node server.js /path/to/kubeconfig.yaml` (port from `PORT`,
 ```bash
 npm run demo     # fake data, http://127.0.0.1:8090
 ```
+
+## Spring Boot log view
+
+The **Spring** toggle in the log toolbar (on by default, remembered per browser) renders each log line the way Spring Boot prints it to the console:
+
+```
+2026-11-20T17:16:49.123  INFO --- [account-gateway] [nio-8080-exec-1] u.f.a.controller.AccountController       : #request GET /api/v1/accounts 200
+```
+
+- **JSON formats:** `{"@timestamp","message"}` lines, the logstash encoder and log4j2 `JsonLayout` (`level`/`logLevel`, `thread`/`threadName`, `loggerName`).
+- **Colors:** faint date; green, yellow or red level; cyan logger abbreviated like Logback's `%logger{39}`.
+- **Object messages:** the text plus a short summary (`type` and `target.method` for `#message` lines, method/path/status for `#request` and `#response`). The rest of the payload is a one-line preview that expands to syntax-colored JSON on click and stays open across auto-refresh.
+- **Exceptions:** `exception`, `thrown` and `stackTrace` fields are printed as a Java stack trace.
+- **Missing level:** inferred from the line: an error, an exception or a 5xx status means `ERROR`, a 4xx status means `WARN`.
+- **Plain text lines:** ANSI colors are applied, Spring Boot text lines and stack frames are colored, and the `kubectl --timestamps` prefix is kept.
+- **Search:** a hit inside a collapsed payload opens it.
+- **Raw log:** turn the toggle off to see the raw log. Copy and download always use the raw log.
 
 ## Working with Argo CD
 
