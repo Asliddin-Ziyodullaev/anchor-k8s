@@ -31,18 +31,91 @@
 html, body { margin: 0; height: 100%; }
 body { background: var(--bg); color: var(--text); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
 button, select, input { font: inherit; color: inherit; }
-.app { display: grid; grid-template-columns: 240px 1fr; height: 100vh; }
+.app { display: flex; flex-direction: column; height: 100vh; }
 
-/* sidebar */
-aside { background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; }
-.brand { display: flex; align-items: center; gap: 10px; padding: 16px; font-weight: 650; font-size: 15px; border-bottom: 1px solid var(--border); }
+/* top navigation */
+.topbar { background: var(--panel); border-bottom: 1px solid var(--border); position: relative; z-index: 5; box-shadow: 0 1px 0 rgba(0,0,0,.02), 0 6px 18px -12px rgba(15,30,60,.25); }
+.topbar::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px; background: linear-gradient(90deg, transparent, rgba(47,111,237,.45), rgba(20,184,166,.45), transparent); }
+.tb-row { display: flex; align-items: center; gap: 12px; padding: 10px 24px; flex-wrap: wrap; }
+.tb-row .sp { flex: 1; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 650; font-size: 15px; padding-right: 14px; margin-right: 2px; border-right: 1px solid var(--border); }
+.scope { display: flex; gap: 8px; }
+.sel { display: flex; align-items: center; background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px; padding: 0 0 0 10px; }
+.sel:focus-within { border-color: var(--accent); }
+.sel > span { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); white-space: nowrap; }
+.sel select { border: 0; background: transparent; width: auto; max-width: 160px; padding: 6px 10px 6px 6px; font-weight: 600; }
+.btn.icon { display: inline-grid; place-items: center; width: 34px; height: 34px; padding: 0; border-radius: 10px; }
+.tb-row > select { border-radius: 10px; }
+#lang { font-weight: 600; }
+#auto { width: 92px !important; }
+.conn { cursor: default; }
+.conn { padding: 4px 10px; border-radius: 999px; background: var(--panel-2); border: 1px solid var(--border); }
+.search { position: relative; }
+.search svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.search input { padding-left: 32px !important; width: 180px !important; border-radius: 10px !important; }
+.sections { display: flex; gap: 4px; padding: 0 20px; overflow-x: auto; scrollbar-width: none; }
+.sections::-webkit-scrollbar { display: none; }
+.sec { position: relative; display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px 12px; background: none; border: 0; cursor: pointer; color: var(--muted); font-weight: 550; white-space: nowrap; border-radius: 10px 10px 0 0; transition: color .15s, background .15s; }
+.sec svg { width: 17px; height: 17px; flex: none; opacity: .85; }
+.sec:hover { color: var(--text); background: var(--panel-2); }
+.sec.active { color: var(--accent); }
+.sec.active::after { content: ""; position: absolute; left: 10px; right: 10px; bottom: 0; height: 3px; border-radius: 3px 3px 0 0; background: linear-gradient(90deg, #2f6fed, #14b8a6); }
+.sec .badge { margin-left: 2px; }
+.badge.warn { background: var(--warn); }
+.subbar { display: flex; gap: 8px; padding: 12px 24px 4px; overflow-x: auto; scrollbar-width: none; flex: none; }
+.subbar::-webkit-scrollbar { display: none; }
+.subbar[hidden] { display: none; }
+.chip { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--panel); color: var(--muted); cursor: pointer; white-space: nowrap; font-weight: 550; transition: all .15s; }
+.chip:hover { color: var(--text); border-color: var(--accent); }
+.chip.active { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 4px 12px -4px rgba(47,111,237,.6); }
+.chip .count { font-size: 11.5px; font-variant-numeric: tabular-nums; padding: 0 7px; border-radius: 999px; background: var(--panel-2); color: var(--muted); line-height: 18px; }
+.chip.active .count { background: rgba(255,255,255,.22); color: #fff; }
+.chip .count:empty { display: none; }
+.foot { display: flex; gap: 18px; flex-wrap: wrap; padding: 8px 24px; border-top: 1px solid var(--border); background: var(--panel); font-size: 12px; color: var(--muted); flex: none; }
+.foot b { color: var(--text); font-weight: 600; }
+.foot span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .logo { width: 32px; height: 32px; flex: none; display: block; }
 .brand-text { min-width: 0; line-height: 1.15; }
 .brand-name { font-weight: 750; font-size: 16px; letter-spacing: -.01em; }
 .brand-name span, .splash-name span { color: var(--accent); font-weight: 650; }
 .brand-id { font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); font-weight: 400; margin-top: 2px; }
-.hdr-logo { display: none; width: 26px; height: 26px; }
 select.lang { width: auto; }
+
+/* monitoring tabs */
+.badge { display: inline-block; min-width: 18px; padding: 0 5px; border-radius: 9px; background: var(--err); color: #fff; font-size: 11px; font-weight: 700; text-align: center; line-height: 18px; }
+.card.static { cursor: default; }
+.card.static:hover { border-color: var(--border); }
+.card small { font-size: 14px; color: var(--muted); font-weight: 500; }
+.card.warn-card { border-color: var(--warn); background: var(--warn-weak); }
+.card.err-card { border-color: var(--err); background: var(--err-weak); }
+.card .s .meter { margin-left: auto; }
+.meter { display: inline-block; vertical-align: middle; width: 70px; height: 6px; border-radius: 3px; background: var(--panel-2); overflow: hidden; margin-left: 8px; }
+.meter i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+.meter.err i { background: var(--err); }
+.mval { display: inline-block; min-width: 64px; font-variant-numeric: tabular-nums; }
+.spark { vertical-align: middle; }
+.spark polyline { fill: none; stroke: var(--accent); stroke-width: 1.6; }
+.spark.up polyline { stroke: var(--warn); }
+.pill.xs, .btn.xs { font-size: 10.5px; padding: 0 6px; }
+.btn.xs { line-height: 18px; margin-left: 4px; }
+.toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 4px 0 12px; }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.seg button { background: var(--panel); border: 0; padding: 5px 12px; cursor: pointer; color: var(--muted); }
+.seg button.on { background: var(--accent-weak); color: var(--accent); font-weight: 600; }
+.small { font-size: 12px; }
+.panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+.form-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.form-row label { display: inline-flex; align-items: center; gap: 6px; }
+.num-in { width: 90px !important; padding: 4px 8px !important; }
+.url-in { width: 360px; max-width: 100%; background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 7px 9px; outline: none; }
+.al-log-head { display: flex; align-items: center; justify-content: space-between; margin: 12px 0 6px; }
+.al-log { max-height: 240px; overflow: auto; font-size: 13px; display: flex; flex-direction: column; gap: 4px; }
+.vrow-diff td { background: var(--warn-weak); }
+.vdiff { color: var(--err); font-weight: 700; }
+.code table.hist { border-collapse: collapse; width: 100%; white-space: nowrap; }
+.code table.hist th, .code table.hist td { border-bottom: 1px solid #2a3440; padding: 6px 10px; text-align: left; vertical-align: top; }
+.code table.hist th { color: #8b95a3; position: static; background: none; }
+.code table.hist tr.cur td { background: rgba(60,207,126,.08); }
 
 /* splash */
 .splash { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; background: var(--bg); transition: opacity .45s ease, visibility .45s; }
@@ -60,24 +133,10 @@ select.lang { width: auto; }
 @keyframes ripple { 0% { transform: scale(.85); opacity: .55; } 100% { transform: scale(1.25); opacity: 0; } }
 @keyframes slide { 0% { transform: translateX(-110%); } 100% { transform: translateX(260%); } }
 @media (prefers-reduced-motion: reduce) { .splash-logo svg, .splash-logo .ripple, .splash-bar i { animation: none; } }
-.field { padding: 12px 16px 4px; }
-.field label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 4px; }
 select, input[type=search], input[type=number] { width: 100%; background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 7px 9px; outline: none; }
 select:focus, input:focus { border-color: var(--accent); }
-nav { padding: 12px 8px; display: flex; flex-direction: column; gap: 2px; overflow: auto; }
-nav button { display: flex; justify-content: space-between; align-items: center; text-align: left; background: none; border: 0; padding: 8px 10px; border-radius: 8px; cursor: pointer; color: var(--muted); }
-nav button:hover { background: var(--panel-2); color: var(--text); }
-nav button.active { background: var(--accent-weak); color: var(--accent); font-weight: 600; }
-nav .count { font-size: 12px; opacity: .8; font-variant-numeric: tabular-nums; }
-.side-foot { margin-top: auto; padding: 12px 16px; border-top: 1px solid var(--border); font-size: 12px; color: var(--muted); word-break: break-all; }
-.side-foot b { color: var(--text); font-weight: 600; }
 
 /* main */
-main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
-header { display: flex; align-items: center; gap: 12px; padding: 12px 20px; border-bottom: 1px solid var(--border); background: var(--panel); flex-wrap: wrap; }
-header h1 { font-size: 17px; margin: 0; font-weight: 650; }
-header .sp { flex: 1; }
-header input[type=search] { width: 240px; }
 .btn { background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 11px; cursor: pointer; white-space: nowrap; }
 .btn:hover { border-color: var(--accent); }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
@@ -86,8 +145,10 @@ header input[type=search] { width: 240px; }
 .tag { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
 .dot.ok { background: var(--ok); } .dot.err { background: var(--err); }
-.demo-banner { background: var(--warn-weak); color: var(--warn); padding: 6px 20px; font-size: 13px; border-bottom: 1px solid var(--border); }
-.content { padding: 20px; overflow: auto; flex: 1; }
+.demo-banner { background: var(--warn-weak); color: var(--warn); padding: 6px 24px; font-size: 13px; border-bottom: 1px solid var(--border); flex: none; }
+.content { padding: 14px 24px 24px; overflow: auto; flex: 1; min-height: 0; }
+.card { transition: border-color .15s, transform .15s, box-shadow .15s; }
+.card:not(.static):hover { transform: translateY(-1px); box-shadow: 0 8px 20px -14px rgba(15,30,60,.45); }
 
 /* cards */
 .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
@@ -100,6 +161,7 @@ header input[type=search] { width: 240px; }
 .bar i { display: block; height: 100%; }
 h2 { font-size: 14px; margin: 0 0 10px; font-weight: 650; }
 .grid2 { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
+h2 { margin-top: 4px; }
 .grid2 > div { min-width: 0; }
 
 /* table */
@@ -175,17 +237,25 @@ td .muted, .muted { color: var(--muted); }
 .podlink { cursor: pointer; } .podlink:hover { color: var(--accent); text-decoration: underline; }
 
 .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 9px 16px; border-radius: 8px; z-index: 20; display: none; }
-.menu-btn { display: none; }
 
-@media (max-width: 860px) {
-  .app { grid-template-columns: 1fr; }
-  aside { position: fixed; inset: 0 auto 0 0; width: 260px; z-index: 12; transform: translateX(-100%); transition: transform .2s; }
-  aside.open { transform: none; box-shadow: 0 0 40px rgba(0,0,0,.3); }
-  .menu-btn { display: inline-block; }
-  .hdr-logo { display: block; }
-  header { padding: 10px 16px; }
-  header input[type=search] { width: 100%; order: 10; }
-  .content { padding: 16px; }
+@media (max-width: 1440px) {
+  .conn #connText { display: none; }
+  .conn { padding: 9px; }
+}
+@media (max-width: 980px) {
+  .brand-id { display: none; }
+  .search { order: 10; flex-basis: 100%; }
+  .search input { width: 100% !important; }
+}
+@media (max-width: 640px) {
+  .tb-row { padding: 10px 16px; gap: 8px; }
+  .brand { border-right: 0; padding-right: 0; }
+  .scope { order: 9; flex-basis: 100%; }
+  .scope .sel { flex: 1; min-width: 0; }
+  .sel select { max-width: none; width: 100%; }
+  .sections { padding: 0 8px; }
+  .sec span { font-size: 13px; }
+  .subbar, .content, .foot { padding-left: 16px; padding-right: 16px; }
   .grid2 { grid-template-columns: 1fr; }
 }
 </style>
@@ -219,39 +289,40 @@ td .muted, .muted { color: var(--muted); }
 </div>
 
 <div class="app">
-  <aside id="side">
-    <div class="brand">
-      <svg class="logo" viewBox="0 0 48 48"><use href="#anchorLogo"/></svg>
-      <div class="brand-text"><div class="brand-name">Anchor <span>K8s</span></div><div class="brand-id">uz.az.anchor</div></div>
-    </div>
-    <div class="field"><label>Context</label><select id="ctx"></select></div>
-    <div class="field"><label>Namespace</label><select id="ns"></select></div>
-    <nav id="nav"></nav>
-    <div class="side-foot" id="foot"></div>
-  </aside>
-  <main>
-    <header>
-      <button class="btn menu-btn" id="menu">☰</button>
-      <svg class="logo hdr-logo" viewBox="0 0 48 48"><use href="#anchorLogo"/></svg>
-      <h1 id="title"></h1>
-      <span class="tag"><span class="dot" id="conn"></span><span id="connText" data-i18n="conn.connecting"></span></span>
+  <header class="topbar">
+    <div class="tb-row">
+      <div class="brand">
+        <svg class="logo" viewBox="0 0 48 48"><use href="#anchorLogo"/></svg>
+        <div class="brand-text"><div class="brand-name">Anchor <span>K8s</span></div><div class="brand-id">uz.az.anchor</div></div>
+      </div>
+      <div class="scope">
+        <label class="sel"><span>Context</span><select id="ctx"></select></label>
+        <label class="sel"><span>Namespace</span><select id="ns"></select></label>
+      </div>
+      <span class="tag conn"><span class="dot" id="conn"></span><span id="connText" data-i18n="conn.connecting"></span></span>
       <div class="sp"></div>
-      <input type="search" id="q" data-i18n-ph="search">
+      <div class="search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input type="search" id="q" data-i18n-ph="search">
+      </div>
       <select id="auto" style="width:auto" data-i18n-title="auto.title">
         <option value="0" data-i18n="auto.off"></option>
         <option value="5">5 s</option>
         <option value="10" selected>10 s</option>
         <option value="30">30 s</option>
       </select>
-      <button class="btn" id="refresh" data-i18n="refresh"></button>
+      <button class="btn icon" id="refresh" data-i18n-title="refresh"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button>
       <select id="lang" class="lang" data-i18n-title="lang.title">
-        <option value="uz">O'zbek</option><option value="ru">Русский</option><option value="en">English</option>
+        <option value="uz" title="O'zbek">UZ</option><option value="ru" title="Русский">RU</option><option value="en" title="English">EN</option>
       </select>
-      <button class="btn" id="theme" data-i18n-title="theme"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor"/></svg></button>
-    </header>
-    <div class="demo-banner" id="demoBanner" hidden><span data-i18n="demo.banner"></span> <span class="mono">node server.js /path/to/kubeconfig.yaml</span></div>
-    <div class="content" id="content"></div>
-  </main>
+      <button class="btn icon" id="theme" data-i18n-title="theme"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor"/></svg></button>
+    </div>
+    <nav class="sections" id="sections"></nav>
+  </header>
+  <div class="subbar" id="subtabs" hidden></div>
+  <div class="demo-banner" id="demoBanner" hidden><span data-i18n="demo.banner"></span> <span class="mono">node server.js /path/to/kubeconfig.yaml</span></div>
+  <main class="content" id="content"></main>
+  <footer class="foot" id="foot"></footer>
 </div>
 
 <div class="drawer-bg" id="drawerBg"></div>
@@ -303,7 +374,7 @@ const I18N = {
     'view.overview': "Umumiy ko'rinish",
     'conn.connecting': 'ulanmoqda…', 'conn.ok': 'ulangan · {t}', 'conn.err': 'ulanish xatosi',
     'search': 'Qidirish…', 'auto.title': 'Avto-yangilash', 'auto.off': "Avto: o'chiq",
-    'refresh': '↻ Yangilash', 'theme': "Mavzu (yorug'/qorong'i)", 'lang.title': 'Til',
+    'refresh': 'Yangilash', 'theme': "Mavzu (yorug'/qorong'i)", 'lang.title': 'Til',
     'demo.banner': "DEMO rejim: soxta ma'lumotlar ko'rsatilmoqda. Haqiqiy klaster uchun:",
     'ns.all': "Barcha namespace'lar",
     'foot.server': 'Server', 'foot.version': 'Versiya', 'foot.file': 'Fayl', 'unknown': "noma'lum",
@@ -323,6 +394,87 @@ const I18N = {
     'log.ts': 'Vaqt', 'log.prev': 'Oldingi', 'log.prevTitle': '--previous: oldingi (qulagan) container loglari', 'log.wrap': 'Wrap',
     'log.only': 'Filtr', 'log.onlyTitle': "Faqat mos qatorlarni ko'rsatish", 'log.filter': 'Logdan qidirish…  (Ctrl+F)', 'log.jump': '↓ Oxiriga',
     'log.lines': '{n} qator', 'log.matches': '{n} mos', 'log.noMatch': "Mos qator yo'q", 'log.empty': "(log bo'sh)", 'loading': 'Yuklanmoqda…',
+    "grp.monitor": "Monitoring",
+    "grp.workloads": "Workloadlar",
+    "grp.network": "Tarmoq",
+    "grp.config": "Sozlama va disk",
+    "grp.cluster": "Klaster",
+    "view.resources": "Resurslar (RAM/CPU)",
+    "view.health": "Sog'liq",
+    "view.versions": "Versiyalar",
+    "view.nginx": "Nginx",
+    "yes": "ha",
+    "no": "yo'q",
+    "col.lastRestart": "Oxirgi restart",
+    "col.completions": "Bajarildi",
+    "col.duration": "Davomiyligi",
+    "col.schedule": "Jadval",
+    "col.suspend": "To'xtatilgan",
+    "col.active": "Faol",
+    "col.lastRun": "Oxirgi ishga tushish",
+    "col.keys": "Kalitlar",
+    "col.capacity": "Hajmi",
+    "col.access": "Kirish",
+    "col.volume": "Volume",
+    "btn.history": "Tarix",
+    "res.forbidden": "Ruxsat yo'q: kubeconfig foydalanuvchisi metrics.k8s.io (pod metrikalari) ni o'qiy olmaydi",
+    "res.none": "Metrika yo'q: klasterda metrics-server ishlamayotgan bo'lishi mumkin.",
+    "res.totalCpu": "Jami CPU",
+    "res.totalMem": "Jami RAM",
+    "res.pods": "{n} ta pod",
+    "res.noLimitCount": "Xotira limiti yo'q",
+    "res.noLimitTip": "limits.memory qo'yilmagan: pod node xotirasini cheksiz egallashi mumkin",
+    "res.noLimit": "limitsiz",
+    "res.top": "Eng ko'p RAM",
+    "res.byPod": "Pod bo'yicha",
+    "res.byApp": "Ilova bo'yicha",
+    "res.reqLim": "RAM request / limit",
+    "res.trend": "RAM trendi",
+    "res.trendHint": "Trend sahifa ochiq turgan vaqtda yig'iladi; to'q sariq chiziq = xotira o'smoqda",
+    "res.nodesForbidden": "Node'lar bo'yicha RAM/CPU: ruxsat yo'q (nodes.metrics.k8s.io)",
+    "h.crash": "CrashLoop / xato",
+    "h.notReady": "Tayyor emas",
+    "h.probe": "Probe xatolari",
+    "h.highRestarts": "Ko'p restart (>5)",
+    "h.lastTerm": "Oxirgi restart sabablari",
+    "h.probeFails": "Readiness / liveness xatolari",
+    "h.none": "Muammo yo'q ✓",
+    "h.exit": "Exit kodi",
+    "h.when": "Qachon",
+    "h.prevLogs": "Oldingi log",
+    "al.title": "Ogohlantirishlar",
+    "al.mem": "Pod RAM chegarasi",
+    "al.memHint": "0 = o'chiq. Oshsa ogohlantiradi",
+    "al.restart": "Pod restart bo'lsa ogohlantirish",
+    "al.nginx": "Nginx ishlamay qolsa yoki qayta tiklansa",
+    "al.notify": "Brauzer bildirishnomasi (sahifa ochiq bo'lishi kerak)",
+    "al.log": "Jurnal",
+    "al.empty": "Hozircha ogohlantirish yo'q",
+    "al.clear": "Tozalash",
+    "al.denied": "Brauzer bildirishnomaga ruxsat bermadi",
+    "al.fired.mem": "{pod}: RAM {v} (> {lim} MiB)",
+    "al.fired.restart": "{pod} restart bo'ldi (jami {n}, sabab: {r})",
+    "al.fired.nginx": "{url} ishlamayapti: {e}",
+    "al.fired.nginxUp": "{url} yana ishlayapti",
+    "v.onlyDiff": "Faqat farqlilar",
+    "v.diffs": "{n} ta deployment versiyasi farq qiladi ({total} ta, {ns} ta namespace)",
+    "hist.title": "Rollout tarixi",
+    "hist.rev": "Revision",
+    "hist.current": "joriy",
+    "ng.ext": "Tashqi nginx serverlar",
+    "ng.add": "Qo'shish",
+    "ng.placeholder": "https://example.uz yoki http://10.0.0.5/nginx_status",
+    "ng.stubHint": "stub_status sahifasi berilsa (/nginx_status), ulanishlar soni ham ko'rinadi",
+    "ng.time": "Javob",
+    "ng.conns": "Ulanish / so'rov",
+    "ng.checked": "Tekshirildi",
+    "ng.none": "Hali server qo'shilmagan",
+    "ng.cluster": "Klaster ichidagi nginx",
+    "ng.clusterNone": "Bu namespace'da nginx topilmadi",
+    "ng.up": "ISHLAYAPTI",
+    "ng.down": "ISHLAMAYAPTI",
+    "ng.days": "{n} kun",
+    "ng.expired": "muddati o'tgan",
     'log.pretty': 'Spring', 'log.prettyTitle': "Loglarni Spring Boot konsoli ko'rinishida chiqarish (JSON → o'qiladigan qator). O'chirilsa: xom log", 'log.expand': "JSON'ni ochish / yopish",
     'toast.copied': 'Nusxa olindi', 'toast.deleted': "Pod o'chirildi", 'toast.restartedPod': 'Pod restart qilindi', 'toast.restarting': 'Restart boshlandi',
     'confirm.delpod': "\"{name}\" podini o'chirasizmi?\n(Deployment bo'lsa, yangisi avtomatik yaratiladi)",
@@ -337,7 +489,7 @@ const I18N = {
     'view.overview': 'Обзор',
     'conn.connecting': 'подключение…', 'conn.ok': 'подключено · {t}', 'conn.err': 'ошибка подключения',
     'search': 'Поиск…', 'auto.title': 'Автообновление', 'auto.off': 'Авто: выкл',
-    'refresh': '↻ Обновить', 'theme': 'Тема (светлая/тёмная)', 'lang.title': 'Язык',
+    'refresh': 'Обновить', 'theme': 'Тема (светлая/тёмная)', 'lang.title': 'Язык',
     'demo.banner': 'ДЕМО-режим: показаны тестовые данные. Для реального кластера:',
     'ns.all': 'Все namespace',
     'foot.server': 'Сервер', 'foot.version': 'Версия', 'foot.file': 'Файл', 'unknown': 'неизвестно',
@@ -357,6 +509,87 @@ const I18N = {
     'log.ts': 'Время', 'log.prev': 'Предыдущий', 'log.prevTitle': '--previous: логи предыдущего (упавшего) контейнера', 'log.wrap': 'Перенос',
     'log.only': 'Фильтр', 'log.onlyTitle': 'Показывать только совпадения', 'log.filter': 'Поиск в логах…  (Ctrl+F)', 'log.jump': '↓ В конец',
     'log.lines': '{n} строк', 'log.matches': 'совпадений: {n}', 'log.noMatch': 'Нет совпадений', 'log.empty': '(лог пуст)', 'loading': 'Загрузка…',
+    "grp.monitor": "Мониторинг",
+    "grp.workloads": "Нагрузки",
+    "grp.network": "Сеть",
+    "grp.config": "Конфиги и диски",
+    "grp.cluster": "Кластер",
+    "view.resources": "Ресурсы (RAM/CPU)",
+    "view.health": "Здоровье",
+    "view.versions": "Версии",
+    "view.nginx": "Nginx",
+    "yes": "да",
+    "no": "нет",
+    "col.lastRestart": "Последний рестарт",
+    "col.completions": "Выполнено",
+    "col.duration": "Длительность",
+    "col.schedule": "Расписание",
+    "col.suspend": "Приостановлен",
+    "col.active": "Активных",
+    "col.lastRun": "Последний запуск",
+    "col.keys": "Ключи",
+    "col.capacity": "Объём",
+    "col.access": "Доступ",
+    "col.volume": "Volume",
+    "btn.history": "История",
+    "res.forbidden": "Нет доступа: пользователь kubeconfig не может читать metrics.k8s.io (метрики подов)",
+    "res.none": "Нет метрик: возможно, в кластере не работает metrics-server.",
+    "res.totalCpu": "Всего CPU",
+    "res.totalMem": "Всего RAM",
+    "res.pods": "подов: {n}",
+    "res.noLimitCount": "Без лимита памяти",
+    "res.noLimitTip": "limits.memory не задан: под может занять всю память ноды",
+    "res.noLimit": "без лимита",
+    "res.top": "Больше всех RAM",
+    "res.byPod": "По подам",
+    "res.byApp": "По приложениям",
+    "res.reqLim": "RAM request / limit",
+    "res.trend": "Тренд RAM",
+    "res.trendHint": "Тренд собирается, пока страница открыта; оранжевая линия = память растёт",
+    "res.nodesForbidden": "RAM/CPU по нодам: нет доступа (nodes.metrics.k8s.io)",
+    "h.crash": "CrashLoop / ошибка",
+    "h.notReady": "Не готовы",
+    "h.probe": "Ошибки проб",
+    "h.highRestarts": "Много рестартов (>5)",
+    "h.lastTerm": "Причины последних рестартов",
+    "h.probeFails": "Ошибки readiness / liveness",
+    "h.none": "Проблем нет ✓",
+    "h.exit": "Код выхода",
+    "h.when": "Когда",
+    "h.prevLogs": "Пред. лог",
+    "al.title": "Оповещения",
+    "al.mem": "Порог RAM пода",
+    "al.memHint": "0 = выкл. Оповещает при превышении",
+    "al.restart": "Оповещать о рестарте пода",
+    "al.nginx": "Когда nginx падает или восстанавливается",
+    "al.notify": "Уведомления браузера (страница должна быть открыта)",
+    "al.log": "Журнал",
+    "al.empty": "Оповещений пока нет",
+    "al.clear": "Очистить",
+    "al.denied": "Браузер запретил уведомления",
+    "al.fired.mem": "{pod}: RAM {v} (> {lim} MiB)",
+    "al.fired.restart": "{pod} перезапустился (всего {n}, причина: {r})",
+    "al.fired.nginx": "{url} не работает: {e}",
+    "al.fired.nginxUp": "{url} снова работает",
+    "v.onlyDiff": "Только различия",
+    "v.diffs": "Версии различаются у {n} deployment ({total} всего, namespace: {ns})",
+    "hist.title": "История rollout",
+    "hist.rev": "Ревизия",
+    "hist.current": "текущая",
+    "ng.ext": "Внешние nginx-серверы",
+    "ng.add": "Добавить",
+    "ng.placeholder": "https://example.uz или http://10.0.0.5/nginx_status",
+    "ng.stubHint": "Если указать страницу stub_status (/nginx_status), будет видно и число соединений",
+    "ng.time": "Ответ",
+    "ng.conns": "Соединения / запросы",
+    "ng.checked": "Проверено",
+    "ng.none": "Серверы ещё не добавлены",
+    "ng.cluster": "Nginx внутри кластера",
+    "ng.clusterNone": "В этом namespace nginx не найден",
+    "ng.up": "РАБОТАЕТ",
+    "ng.down": "НЕ РАБОТАЕТ",
+    "ng.days": "{n} дн.",
+    "ng.expired": "истёк",
     'log.pretty': 'Spring', 'log.prettyTitle': 'Показывать логи как консоль Spring Boot (JSON → читаемая строка). Выкл.: сырой лог', 'log.expand': 'Развернуть / свернуть JSON',
     'toast.copied': 'Скопировано', 'toast.deleted': 'Под удалён', 'toast.restartedPod': 'Под перезапущен', 'toast.restarting': 'Перезапуск начат',
     'confirm.delpod': 'Удалить под "{name}"?\n(Если он из Deployment, новый создастся автоматически)',
@@ -371,7 +604,7 @@ const I18N = {
     'view.overview': 'Overview',
     'conn.connecting': 'connecting…', 'conn.ok': 'connected · {t}', 'conn.err': 'connection error',
     'search': 'Search…', 'auto.title': 'Auto-refresh', 'auto.off': 'Auto: off',
-    'refresh': '↻ Refresh', 'theme': 'Theme (light/dark)', 'lang.title': 'Language',
+    'refresh': 'Refresh', 'theme': 'Theme (light/dark)', 'lang.title': 'Language',
     'demo.banner': 'DEMO mode: showing fake data. For a real cluster:',
     'ns.all': 'All namespaces',
     'foot.server': 'Server', 'foot.version': 'Version', 'foot.file': 'File', 'unknown': 'unknown',
@@ -391,6 +624,87 @@ const I18N = {
     'log.ts': 'Time', 'log.prev': 'Previous', 'log.prevTitle': '--previous: logs of the previous (crashed) container', 'log.wrap': 'Wrap',
     'log.only': 'Filter', 'log.onlyTitle': 'Show matching lines only', 'log.filter': 'Search logs…  (Ctrl+F)', 'log.jump': '↓ To bottom',
     'log.lines': '{n} lines', 'log.matches': '{n} matches', 'log.noMatch': 'No matching lines', 'log.empty': '(log is empty)', 'loading': 'Loading…',
+    "grp.monitor": "Monitoring",
+    "grp.workloads": "Workloads",
+    "grp.network": "Network",
+    "grp.config": "Config & storage",
+    "grp.cluster": "Cluster",
+    "view.resources": "Resources (RAM/CPU)",
+    "view.health": "Health",
+    "view.versions": "Versions",
+    "view.nginx": "Nginx",
+    "yes": "yes",
+    "no": "no",
+    "col.lastRestart": "Last restart",
+    "col.completions": "Completions",
+    "col.duration": "Duration",
+    "col.schedule": "Schedule",
+    "col.suspend": "Suspended",
+    "col.active": "Active",
+    "col.lastRun": "Last run",
+    "col.keys": "Keys",
+    "col.capacity": "Capacity",
+    "col.access": "Access",
+    "col.volume": "Volume",
+    "btn.history": "History",
+    "res.forbidden": "Access denied: the kubeconfig user can't read metrics.k8s.io (pod metrics)",
+    "res.none": "No metrics: metrics-server may not be running in the cluster.",
+    "res.totalCpu": "Total CPU",
+    "res.totalMem": "Total RAM",
+    "res.pods": "{n} pods",
+    "res.noLimitCount": "No memory limit",
+    "res.noLimitTip": "limits.memory is not set: the pod can take all of the node memory",
+    "res.noLimit": "no limit",
+    "res.top": "Most RAM",
+    "res.byPod": "By pod",
+    "res.byApp": "By app",
+    "res.reqLim": "RAM request / limit",
+    "res.trend": "RAM trend",
+    "res.trendHint": "Trends are collected while this page is open; an orange line means memory is growing",
+    "res.nodesForbidden": "Per-node RAM/CPU: access denied (nodes.metrics.k8s.io)",
+    "h.crash": "CrashLoop / error",
+    "h.notReady": "Not ready",
+    "h.probe": "Probe failures",
+    "h.highRestarts": "Many restarts (>5)",
+    "h.lastTerm": "Last restart reasons",
+    "h.probeFails": "Readiness / liveness failures",
+    "h.none": "No problems ✓",
+    "h.exit": "Exit code",
+    "h.when": "When",
+    "h.prevLogs": "Previous log",
+    "al.title": "Alerts",
+    "al.mem": "Pod RAM threshold",
+    "al.memHint": "0 = off. Alerts when exceeded",
+    "al.restart": "Alert when a pod restarts",
+    "al.nginx": "When nginx goes down or recovers",
+    "al.notify": "Browser notifications (the page must stay open)",
+    "al.log": "Log",
+    "al.empty": "No alerts yet",
+    "al.clear": "Clear",
+    "al.denied": "The browser blocked notifications",
+    "al.fired.mem": "{pod}: RAM {v} (> {lim} MiB)",
+    "al.fired.restart": "{pod} restarted ({n} total, reason: {r})",
+    "al.fired.nginx": "{url} is down: {e}",
+    "al.fired.nginxUp": "{url} is back up",
+    "v.onlyDiff": "Only differences",
+    "v.diffs": "{n} deployments differ in version ({total} total, {ns} namespaces)",
+    "hist.title": "Rollout history",
+    "hist.rev": "Revision",
+    "hist.current": "current",
+    "ng.ext": "External nginx servers",
+    "ng.add": "Add",
+    "ng.placeholder": "https://example.com or http://10.0.0.5/nginx_status",
+    "ng.stubHint": "Point it at a stub_status page (/nginx_status) to also see connection counts",
+    "ng.time": "Response",
+    "ng.conns": "Conns / requests",
+    "ng.checked": "Checked",
+    "ng.none": "No servers added yet",
+    "ng.cluster": "Nginx inside the cluster",
+    "ng.clusterNone": "No nginx found in this namespace",
+    "ng.up": "UP",
+    "ng.down": "DOWN",
+    "ng.days": "{n} days",
+    "ng.expired": "expired",
     'log.pretty': 'Spring', 'log.prettyTitle': 'Show logs like the Spring Boot console (JSON → readable line). Off: raw log', 'log.expand': 'Expand / collapse JSON',
     'toast.copied': 'Copied', 'toast.deleted': 'Pod deleted', 'toast.restartedPod': 'Pod restarted', 'toast.restarting': 'Restart started',
     'confirm.delpod': 'Delete pod "{name}"?\n(If it belongs to a Deployment, a new one is created automatically)',
@@ -424,10 +738,22 @@ function applyI18n() {
   $('#lang').value = LANG;
 }
 
-const VIEWS = ['overview', 'pods', 'deployments', 'services', 'ingresses', 'events', 'nodes'];
-const viewTitle = (v) => (v === 'overview' ? t('view.overview') : v[0].toUpperCase() + v.slice(1));
+const NAV = [
+  [null, ['overview']],
+  ['grp.monitor', ['resources', 'health', 'versions', 'nginx']],
+  ['grp.workloads', ['pods', 'deployments', 'statefulsets', 'daemonsets', 'jobs', 'cronjobs']],
+  ['grp.network', ['services', 'ingresses']],
+  ['grp.config', ['configmaps', 'pvcs']],
+  ['grp.cluster', ['events', 'nodes']],
+];
+const VIEWS = NAV.flatMap(([, v]) => v);
+const KIND_TITLE = { pods: 'Pods', deployments: 'Deployments', statefulsets: 'StatefulSets', daemonsets: 'DaemonSets', jobs: 'Jobs', cronjobs: 'CronJobs',
+  services: 'Services', ingresses: 'Ingresses', configmaps: 'ConfigMaps', pvcs: 'PVC', events: 'Events', nodes: 'Nodes' };
+const viewTitle = (v) => KIND_TITLE[v] || t('view.' + v);
+// kinds fetched only while their tab is open (keeps the regular refresh light)
+const LAZY = ['statefulsets', 'daemonsets', 'jobs', 'cronjobs', 'configmaps', 'pvcs'];
 
-const S = { view: 'overview', ns: null, info: null, data: {}, q: '', sort: {}, timer: null };
+const S = { lastIn: {}, view: 'overview', ns: null, info: null, data: {}, q: '', sort: {}, timer: null, hist: new Map(), probes: {}, resMode: 'pod', vOnlyDiff: false };
 S.view = store.get('view') || 'overview';
 if (!VIEWS.includes(S.view)) S.view = 'overview';
 
@@ -469,6 +795,7 @@ const COLS = {
     ['namespace', 'Namespace', null, true],
     ['status', 'col.status', (p) => statusPill(p.status)],
     ['ready', 'Ready', null], ['restarts', 'col.restarts', (p) => `<span class="${p.restarts > 5 ? 'pill err' : ''}">${p.restarts}</span>`],
+    ['lastTerm', 'col.lastRestart', (p) => termPill(p.lastTerm)],
     ['node', 'Node', (p) => `<span class="muted">${esc(p.node)}</span>`], ['ip', 'IP', (p) => `<span class="mono muted">${esc(p.ip)}</span>`],
     ['created', 'col.age', (p) => ago(p.created)],
     ['_a', '', (p) => `<div class="actions">
@@ -486,7 +813,72 @@ const COLS = {
     ['_a', '', (d) => `<div class="actions">
       <button class="btn sm" data-act="scale" ${attrs(d)} data-r="${d.replicas}" data-argo="${esc(d.argocd || '')}">${t('btn.scale')}</button>
       <button class="btn sm" data-act="restart" ${attrs(d)}>${t('btn.restart')}</button>
+      <button class="btn sm" data-act="history" ${attrs(d)}>${t('btn.history')}</button>
       <button class="btn sm" data-act="depyaml" ${attrs(d)}>YAML</button></div>`],
+  ],
+  statefulsets: [
+    ['name', 'col.name', (d) => `<b>${esc(d.name)}</b>`], ['namespace', 'Namespace', null, true],
+    ['ready', 'Ready', (d) => readyPill(d.ready, d.replicas)],
+    ['images', 'Image', (d) => `<span class="mono muted">${esc(d.images.join(', '))}</span>`],
+    ['created', 'col.age', (d) => ago(d.created)], ['_a', '', (d) => yamlBtn(d, 'statefulsets')],
+  ],
+  daemonsets: [
+    ['name', 'col.name', (d) => `<b>${esc(d.name)}</b>`], ['namespace', 'Namespace', null, true],
+    ['ready', 'Ready', (d) => readyPill(d.ready, d.desired)],
+    ['images', 'Image', (d) => `<span class="mono muted">${esc(d.images.join(', '))}</span>`],
+    ['created', 'col.age', (d) => ago(d.created)], ['_a', '', (d) => yamlBtn(d, 'daemonsets')],
+  ],
+  jobs: [
+    ['name', 'col.name', (j) => `<b>${esc(j.name)}</b>`], ['namespace', 'Namespace', null, true],
+    ['status', 'col.status', (j) => statusPill(j.status)], ['completions', 'col.completions', null],
+    ['duration', 'col.duration', (j) => fmtDur(j.duration)],
+    ['created', 'col.age', (j) => ago(j.created)], ['_a', '', (j) => yamlBtn(j, 'jobs')],
+  ],
+  cronjobs: [
+    ['name', 'col.name', (c) => `<b>${esc(c.name)}</b>`], ['namespace', 'Namespace', null, true],
+    ['schedule', 'col.schedule', (c) => `<span class="mono">${esc(c.schedule)}</span>`],
+    ['suspend', 'col.suspend', (c) => (c.suspend ? `<span class="pill warn">${t('yes')}</span>` : `<span class="muted">${t('no')}</span>`)],
+    ['active', 'col.active', null], ['lastRun', 'col.lastRun', (c) => ago(c.lastRun)],
+    ['created', 'col.age', (c) => ago(c.created)], ['_a', '', (c) => yamlBtn(c, 'cronjobs')],
+  ],
+  configmaps: [
+    ['name', 'col.name', (c) => `<b>${esc(c.name)}</b>`], ['namespace', 'Namespace', null, true],
+    ['keys', 'col.keys', (c) => `${c.keys} <span class="muted small" title="${esc(c.keyNames)}">${esc(c.keyNames.length > 60 ? c.keyNames.slice(0, 60) + '…' : c.keyNames)}</span>`, false, 'wrap'],
+    ['created', 'col.age', (c) => ago(c.created)], ['_a', '', (c) => yamlBtn(c, 'configmaps')],
+  ],
+  pvcs: [
+    ['name', 'col.name', (v) => `<b>${esc(v.name)}</b>`], ['namespace', 'Namespace', null, true],
+    ['status', 'col.status', (v) => statusPill(v.status === 'Bound' ? 'Ready' : v.status)], ['capacity', 'col.capacity', null],
+    ['storageClass', 'StorageClass', (v) => `<span class="mono muted">${esc(v.storageClass)}</span>`], ['access', 'col.access', null],
+    ['volume', 'col.volume', (v) => `<span class="mono muted">${esc(v.volume)}</span>`],
+    ['created', 'col.age', (v) => ago(v.created)], ['_a', '', (v) => yamlBtn(v, 'pvcs')],
+  ],
+  resources: [
+    ['name', 'col.name', (r) => `<span class="mono podlink" data-act="logs" ${attrs(r)}>${esc(r.name)}</span>${r.memLim == null ? ` <span class="pill warn xs" title="${esc(t('res.noLimitTip'))}">${t('res.noLimit')}</span>` : ''}`],
+    ['namespace', 'Namespace', null, true],
+    ['cpu', 'CPU', (r) => `<span class="mval">${fmtCpu(r.cpu)}</span>${meter(r.cpu, R.maxCpu)}`],
+    ['mem', 'RAM', (r) => `<span class="mval">${fmtMem(r.mem)}</span>${meter(r.mem, R.maxMem, r.memLim && r.mem / r.memLim > 0.9 ? 'err' : '')}`],
+    ['memLim', 'res.reqLim', (r) => `<span class="muted">${fmtMem(r.memReq)} / ${fmtMem(r.memLim)}</span>`],
+    ['trend', 'res.trend', (r) => spark((S.hist.get(r.key) || []).map((h) => h.mem))],
+  ],
+  resApps: [
+    ['name', 'col.name', (r) => `<b>${esc(r.name)}</b>${r.noLimit ? ` <span class="pill warn xs" title="${esc(t('res.noLimitTip'))}">${t('res.noLimit')}</span>` : ''}`],
+    ['namespace', 'Namespace', null, true], ['pods', 'Pods', null],
+    ['cpu', 'CPU', (r) => `<span class="mval">${fmtCpu(r.cpu)}</span>${meter(r.cpu, R.maxCpu)}`],
+    ['mem', 'RAM', (r) => `<span class="mval">${fmtMem(r.mem)}</span>${meter(r.mem, R.maxMem)}`],
+  ],
+  lastTerm: [
+    ['name', 'col.name', (p) => `<span class="mono podlink" data-act="logs" ${attrs(p)}>${esc(p.name)}</span>`], ['namespace', 'Namespace', null, true],
+    ['reason', 'col.reason', (p) => termPill(p.lastTerm)],
+    ['exit', 'h.exit', (p) => `<span class="mono">${p.lastTerm.exitCode ?? '-'}</span>`],
+    ['when', 'h.when', (p) => ago(p.lastTerm.at)], ['restarts', 'col.restarts', null],
+    ['_a', '', (p) => `<div class="actions"><button class="btn sm" data-act="prevlogs" ${attrs(p)} title="--previous">${t('h.prevLogs')}</button></div>`],
+  ],
+  probes: [
+    ['object', 'col.object', (e) => `<span class="mono">${esc(e.object.replace(/^Pod\//, ''))}</span>`],
+    ['type', 'col.type', (e) => `<span class="pill warn">${esc((/^(\w+) probe/.exec(e.message) || [, 'Probe'])[1])}</span>`],
+    ['count', 'col.count', null], ['message', 'col.message', (e) => `<span class="muted">${esc(e.message)}</span>`, false, 'wrap'],
+    ['last', 'col.last', (e) => ago(e.last)],
   ],
   services: [
     ['name', 'col.name', (s) => `<b>${esc(s.name)}</b>`], ['namespace', 'Namespace', null, true],
@@ -512,6 +904,12 @@ const COLS = {
     ['cpu', 'CPU', null], ['memory', 'col.memory', null], ['created', 'col.age', (n) => ago(n.created)],
   ],
 };
+
+function termPill(lt) {
+  if (!lt) return '';
+  const cls = lt.reason === 'OOMKilled' || lt.reason === 'Error' ? 'err' : lt.reason === 'Completed' ? 'ok' : 'warn';
+  return `<span class="pill ${cls}" title="exit ${esc(lt.exitCode)} · ${esc(lt.container)} · ${ago(lt.at)}">${esc(lt.reason)}</span>`;
+}
 
 function filtered(kind) {
   const q = S.q.toLowerCase();
@@ -553,6 +951,8 @@ function overview() {
     ${card('services', 'Services', (S.data.services || []).length, '<span class="muted">ClusterIP / LB / NodePort</span>')}
     ${card('events', t('ov.warnings'), warns.length, '<span class="muted">Warning events</span>')}
     ${card('nodes', 'Nodes', S.forbidden?.nodes ? '🔒' : nodes.length, `<span class="muted">${nodes.filter((n) => n.status === 'Ready').length} Ready</span>`)}
+    ${(S.data.metrics || []).length ? card('resources', 'RAM', fmtMem(S.data.metrics.reduce((a, m) => a + m.memory, 0)), `<span class="muted">CPU ${fmtCpu(S.data.metrics.reduce((a, m) => a + m.cpu, 0))}</span>`) : ''}
+    ${card('health', t('view.health'), healthIssues().total, `<span class="muted">OOMKilled ${healthIssues().oom.length} · ${t('h.probe')} ${healthIssues().probes.length}</span>`)}
   </div>
   <div class="grid2">
     <div><h2>${t('ov.badPods')}</h2>${bad.length ? table('pods', bad) : `<div class="tbl-wrap"><div class="empty">${t('ov.allGood')}</div></div>`}</div>
@@ -560,45 +960,409 @@ function overview() {
   </div>`;
 }
 
-// ---------- render ----------
-function renderNav() {
-  $('#nav').innerHTML = VIEWS.map((k) => {
-    const n = S.data[k];
-    return `<button data-view="${k}" class="${S.view === k ? 'active' : ''}"><span>${viewTitle(k)}</span><span class="count">${S.forbidden?.[k] ? '🔒' : n ? n.length : ''}</span></button>`;
+// ---------- shared helpers for the monitoring tabs ----------
+const fmtMem = (b) => (b == null ? '—' : b >= 2 ** 30 ? (b / 2 ** 30).toFixed(2) + ' GiB' : Math.round(b / 2 ** 20) + ' MiB');
+const fmtCpu = (c) => (c == null ? '—' : c >= 1 ? c.toFixed(2) : Math.round(c * 1000) + 'm');
+function fmtDur(sec) {
+  if (sec == null) return '-';
+  if (sec < 60) return sec + 's';
+  if (sec < 3600) return `${Math.floor(sec / 60)}m ${sec % 60}s`;
+  return `${Math.floor(sec / 3600)}h ${Math.floor((sec % 3600) / 60)}m`;
+}
+// node capacity strings ("32Gi", "32774112Ki", "8") -> bytes / cores
+function qtyBytes(q) {
+  const m = /^([0-9.]+)(Ki|Mi|Gi|Ti|k|M|G|T)?$/.exec(String(q || ''));
+  return m ? Number(m[1]) * ({ Ki: 2 ** 10, Mi: 2 ** 20, Gi: 2 ** 30, Ti: 2 ** 40, k: 1e3, M: 1e6, G: 1e9, T: 1e12 }[m[2]] ?? 1) : 0;
+}
+const qtyCores = (q) => (/m$/.test(String(q)) ? parseFloat(q) / 1000 : parseFloat(q) || 0);
+function meter(v, max, cls = '') {
+  const pct = max && v != null ? Math.min(100, (v / max) * 100) : 0;
+  return `<span class="meter ${cls}"><i style="width:${pct.toFixed(1)}%"></i></span>`;
+}
+// tiny inline trend line; turns orange when the value grew by >10% over the window
+function spark(vals, w = 96, h = 22) {
+  if (vals.length < 2) return '<span class="muted">…</span>';
+  const max = Math.max(...vals), min = Math.min(...vals), span = max - min || 1;
+  const pts = vals.map((v, i) => `${((i / (vals.length - 1)) * w).toFixed(1)},${(h - 2 - ((v - min) / span) * (h - 4)).toFixed(1)}`).join(' ');
+  const up = vals[vals.length - 1] > vals[0] * 1.1;
+  return `<svg class="spark${up ? ' up' : ''}" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><polyline points="${pts}"/></svg>`;
+}
+const readyPill = (ready, want) => `<span class="pill ${ready === want ? 'ok' : ready === 0 && want > 0 ? 'err' : 'warn'}">${ready}/${want}</span>`;
+const yamlBtn = (o, kind) => `<div class="actions"><button class="btn sm" data-act="yaml" data-kind="${kind}" ${attrs(o)}>YAML</button></div>`;
+const emptyBox = (msg) => `<div class="tbl-wrap"><div class="empty">${msg}</div></div>`;
+const podKey = (o) => `${o.namespace}/${o.name}`;
+const matchQ = (s) => !S.q || String(s).toLowerCase().includes(S.q.toLowerCase());
+
+// ---------- metrics history (kept in memory while the page is open) ----------
+const HIST_MAX = 120;
+function recordMetrics() {
+  const now = Date.now();
+  S.mx = new Map((S.data.metrics || []).map((m) => [podKey(m), m]));
+  for (const [k, m] of S.mx) {
+    let h = S.hist.get(k);
+    if (!h) S.hist.set(k, (h = []));
+    const last = h[h.length - 1];
+    if (!last || now - last.t > 1500) {
+      h.push({ t: now, cpu: m.cpu, mem: m.memory });
+      if (h.length > HIST_MAX) h.shift();
+    }
+  }
+}
+
+// ---------- Resources (RAM / CPU) ----------
+const R = { maxCpu: 0, maxMem: 0 };
+function resourcesView() {
+  if (S.forbidden?.metrics) return emptyBox(t('res.forbidden'));
+  const pods = S.data.pods || [];
+  let rows = pods.map((p) => {
+    const m = S.mx?.get(podKey(p));
+    return { ...p, cpu: m?.cpu ?? null, mem: m?.memory ?? null, key: podKey(p) };
+  }).filter((r) => r.mem != null);
+  if (!rows.length) return emptyBox(S.metricsError ? `${t('res.none')}<br><span class="muted">${esc(S.metricsError)}</span>` : t('res.none'));
+
+  const totalCpu = rows.reduce((a, r) => a + r.cpu, 0), totalMem = rows.reduce((a, r) => a + r.mem, 0);
+  const noLim = pods.filter((p) => p.memLim == null);
+  const top = [...rows].sort((a, b) => b.mem - a.mem)[0];
+  const byApp = S.resMode === 'app';
+  if (byApp) {
+    const g = new Map();
+    for (const r of rows) {
+      const k = `${r.namespace}/${r.app || r.name}`;
+      const cur = g.get(k) || { name: r.app || r.name, namespace: r.namespace, pods: 0, cpu: 0, mem: 0, noLimit: false };
+      cur.pods++; cur.cpu += r.cpu; cur.mem += r.mem; cur.noLimit ||= r.memLim == null;
+      g.set(k, cur);
+    }
+    rows = [...g.values()];
+  }
+  rows = rows.filter((r) => matchQ(r.name));
+  if (!S.sort.resources && !S.sort.resApps) rows.sort((a, b) => b.mem - a.mem);
+  R.maxCpu = Math.max(...rows.map((r) => r.cpu), 0); R.maxMem = Math.max(...rows.map((r) => r.mem), 0);
+
+  // node usage, when the kubeconfig user may read node metrics
+  let nodes = '';
+  const nm = S.data.nodeMetrics || [];
+  if (nm.length) {
+    const cap = new Map((S.data.nodes || []).map((n) => [n.name, n]));
+    nodes = `<h2>Nodes</h2><div class="cards">${nm.map((n) => {
+      const c = cap.get(n.name), cc = qtyCores(c?.cpu), mc = qtyBytes(c?.memory);
+      return `<div class="card static"><div class="k">${esc(n.name)}</div>
+        <div class="s">CPU ${fmtCpu(n.cpu)}${cc ? ' / ' + cc : ''} ${meter(n.cpu, cc)}</div>
+        <div class="s">RAM ${fmtMem(n.memory)}${mc ? ' / ' + fmtMem(mc) : ''} ${meter(n.memory, mc, mc && n.memory / mc > 0.9 ? 'err' : '')}</div></div>`;
+    }).join('')}</div>`;
+  } else if (S.forbidden?.nodeMetrics) nodes = `<p class="muted small">🔒 ${t('res.nodesForbidden')}</p>`;
+
+  const card = (k, v, s, cls = '') => `<div class="card static ${cls}"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
+  return `
+  <div class="cards">
+    ${card(t('res.totalCpu'), fmtCpu(totalCpu), `<span class="muted">${t('res.pods', { n: rows.length })}</span>`)}
+    ${card(t('res.totalMem'), fmtMem(totalMem), `<span class="muted">${t('res.pods', { n: rows.length })}</span>`)}
+    ${card(t('res.noLimitCount'), `${noLim.length}<small>/${pods.length}</small>`, `<span class="muted">${t('res.noLimitTip')}</span>`, noLim.length ? 'warn-card' : '')}
+    ${card(t('res.top'), fmtMem(top.mem), `<span class="mono">${esc(top.name)}</span>`)}
+  </div>
+  ${nodes}
+  <div class="toolbar">
+    <div class="seg">
+      <button class="${byApp ? '' : 'on'}" data-resmode="pod">${t('res.byPod')}</button>
+      <button class="${byApp ? 'on' : ''}" data-resmode="app">${t('res.byApp')}</button>
+    </div>
+    <span class="muted small">${t('res.trendHint')}</span>
+  </div>
+  ${table(byApp ? 'resApps' : 'resources', rows)}`;
+}
+
+// ---------- Health ----------
+function healthIssues() {
+  const pods = S.data.pods || [], ev = S.data.events || [];
+  const oom = pods.filter((p) => p.lastTerm?.reason === 'OOMKilled');
+  const crash = pods.filter((p) => /CrashLoopBackOff|^Error$|ImagePullBackOff|ErrImagePull|CreateContainer/.test(p.status));
+  const notReady = pods.filter((p) => { const [a, b] = String(p.ready).split('/').map(Number); return p.status === 'Running' && a < b; });
+  const restarts = pods.filter((p) => p.restarts > 5);
+  // probe failures = "Unhealthy" events, grouped per pod
+  const pm = new Map();
+  for (const e of ev) {
+    if (e.reason !== 'Unhealthy') continue;
+    const cur = pm.get(e.object);
+    if (!cur) pm.set(e.object, { object: e.object, count: e.count, message: e.message, last: e.last });
+    else { cur.count += e.count; if ((e.last || '') > (cur.last || '')) { cur.last = e.last; cur.message = e.message; } }
+  }
+  const probes = [...pm.values()].sort((a, b) => (b.last || '').localeCompare(a.last || ''));
+  return { oom, crash, notReady, restarts, probes, total: new Set([...oom, ...crash, ...notReady].map(podKey)).size + probes.length };
+}
+function healthView() {
+  const h = healthIssues();
+  const card = (k, v, cls) => `<div class="card static ${v ? cls : ''}"><div class="k">${k}</div><div class="v">${v}</div></div>`;
+  const terms = (S.data.pods || []).filter((p) => p.lastTerm && matchQ(p.name)).sort((a, b) => (b.lastTerm.at || '').localeCompare(a.lastTerm.at || ''));
+  const probes = h.probes.filter((p) => matchQ(p.object));
+  return `
+  <div class="cards">
+    ${card('OOMKilled', h.oom.length, 'err-card')}
+    ${card(t('h.crash'), h.crash.length, 'err-card')}
+    ${card(t('h.notReady'), h.notReady.length, 'warn-card')}
+    ${card(t('h.probe'), h.probes.length, 'warn-card')}
+    ${card(t('h.highRestarts'), h.restarts.length, 'warn-card')}
+  </div>
+  <div class="grid2">
+    <div><h2>${t('h.lastTerm')}</h2>${terms.length ? table('lastTerm', terms) : emptyBox(t('h.none'))}</div>
+    <div><h2>${t('h.probeFails')}</h2>${probes.length ? table('probes', probes) : emptyBox(t('h.none'))}</div>
+    <div>${alertsPanel()}</div>
+  </div>`;
+}
+
+// ---------- Alerts ----------
+const A = { rules: { mem: 0, restart: true, nginx: true, notify: false }, log: [], unread: 0, memOver: new Set(), prevRestarts: null, prevUp: {} };
+try { Object.assign(A.rules, JSON.parse(store.get('alerts') || '{}')); } catch { /* defaults */ }
+const saveRules = () => store.set('alerts', JSON.stringify(A.rules));
+function fire(kind, text) {
+  A.log.unshift({ at: new Date().toISOString(), kind, text });
+  if (A.log.length > 100) A.log.length = 100;
+  if (S.view !== 'health') A.unread++;
+  toast('🔔 ' + text);
+  if (A.rules.notify && 'Notification' in window && Notification.permission === 'granted') {
+    try { new Notification('Anchor K8s', { body: text, icon: 'logo.svg', tag: kind + ':' + text }); } catch { /* unsupported */ }
+  }
+}
+function checkPodAlerts() {
+  const cur = new Map((S.data.pods || []).map((p) => [podKey(p), p]));
+  if (A.prevRestarts && A.rules.restart) {
+    for (const [k, p] of cur) {
+      const prev = A.prevRestarts.get(k);
+      if (prev != null && p.restarts > prev) fire('restart', t('al.fired.restart', { pod: p.name, n: p.restarts, r: p.lastTerm?.reason || '?' }));
+    }
+  }
+  A.prevRestarts = new Map([...cur].map(([k, p]) => [k, p.restarts]));
+  if (A.rules.mem > 0) {
+    const lim = A.rules.mem * 2 ** 20;
+    for (const [k, m] of S.mx || []) {
+      if (m.memory > lim) {
+        if (!A.memOver.has(k)) { A.memOver.add(k); fire('mem', t('al.fired.mem', { pod: m.name, v: fmtMem(m.memory), lim: A.rules.mem })); }
+      } else A.memOver.delete(k);
+    }
+  }
+}
+function checkNginxAlerts() {
+  for (const u of nginxTargets()) {
+    const r = S.probes[u];
+    if (!r) continue;
+    const was = A.prevUp[u];
+    if (A.rules.nginx && was === true && !r.up) fire('nginx', t('al.fired.nginx', { url: u, e: r.error || r.status }));
+    if (A.rules.nginx && was === false && r.up) fire('nginx', t('al.fired.nginxUp', { url: u }));
+    A.prevUp[u] = r.up;
+  }
+}
+function alertsPanel() {
+  const r = A.rules;
+  return `<h2>🔔 ${t('al.title')}</h2>
+  <div class="panel">
+    <div class="form-row"><label>${t('al.mem')} <input type="number" class="num-in" data-rule="mem" min="0" step="64" value="${r.mem}"> MiB</label><span class="muted small">${t('al.memHint')}</span></div>
+    <div class="form-row"><label><input type="checkbox" data-rule="restart" ${r.restart ? 'checked' : ''}> ${t('al.restart')}</label></div>
+    <div class="form-row"><label><input type="checkbox" data-rule="nginx" ${r.nginx ? 'checked' : ''}> ${t('al.nginx')}</label></div>
+    <div class="form-row"><label><input type="checkbox" data-rule="notify" ${r.notify ? 'checked' : ''}> ${t('al.notify')}</label></div>
+    <div class="al-log-head"><b>${t('al.log')}</b>${A.log.length ? `<button class="btn sm" data-act="alclear">${t('al.clear')}</button>` : ''}</div>
+    <div class="al-log">${A.log.length ? A.log.map((a) => `<div><span class="muted">${new Date(a.at).toLocaleTimeString()}</span> ${esc(a.text)}</div>`).join('') : `<div class="muted">${t('al.empty')}</div>`}</div>
+  </div>`;
+}
+
+// ---------- Versions ----------
+async function loadVersions() {
+  const nss = S.nsNames || [S.ns];
+  const res = await Promise.allSettled(nss.map((n) => api(`/${encodeURIComponent(n)}/deployments`)));
+  S.versions = nss.map((n, i) => ({
+    ns: n,
+    deps: res[i].status === 'fulfilled' ? res[i].value : null,
+    locked: res[i].status === 'rejected' && /forbidden/i.test(res[i].reason.message),
+  }));
+}
+const imgTag = (img) => { const s = img.split('@')[0]; const i = s.lastIndexOf(':'); return i > s.lastIndexOf('/') ? s.slice(i + 1) : 'latest'; };
+function versionsView() {
+  if (!S.versions) return emptyBox(t('loading'));
+  const cols = S.versions;
+  const names = [...new Set(cols.flatMap((c) => (c.deps || []).map((d) => d.name)))].sort();
+  let diffCount = 0;
+  const rows = names.map((name) => {
+    const cells = cols.map((c) => {
+      const d = (c.deps || []).find((x) => x.name === name);
+      return d ? { tag: d.images.map(imgTag).join(', '), img: d.images.join('\n'), d } : null;
+    });
+    const tags = cells.filter(Boolean).map((c) => c.tag);
+    const freq = tags.reduce((m, x) => m.set(x, (m.get(x) || 0) + 1), new Map());
+    const common = [...freq].sort((a, b) => b[1] - a[1])[0]?.[0];
+    const diff = freq.size > 1;
+    if (diff) diffCount++;
+    return { name, cells, diff, common };
+  }).filter((r) => matchQ(r.name) && (!S.vOnlyDiff || r.diff));
+  const head = cols.map((c) => `<th>${esc(c.ns)}${c.locked ? ' 🔒' : ''}</th>`).join('');
+  const body = rows.map((r) => `<tr class="${r.diff ? 'vrow-diff' : ''}"><td><b>${esc(r.name)}</b></td>${r.cells.map((c, i) => !c ? '<td class="muted">—</td>'
+    : `<td><span class="mono ${r.diff && c.tag !== r.common ? 'vdiff' : ''}" title="${esc(c.img)}">${esc(c.tag)}</span>
+       <span class="muted small">${c.d.ready}/${c.d.replicas}</span>
+       <button class="btn xs" data-act="history" data-ns="${esc(cols[i].ns)}" data-name="${esc(r.name)}" title="${esc(t('btn.history'))}">⟲</button></td>`).join('')}</tr>`).join('');
+  return `<div class="toolbar">
+    <label class="tag"><input type="checkbox" data-vonly ${S.vOnlyDiff ? 'checked' : ''}> ${t('v.onlyDiff')}</label>
+    <span class="muted small">${t('v.diffs', { n: diffCount, total: names.length, ns: cols.length })}</span>
+  </div>
+  ${rows.length ? `<div class="tbl-wrap"><table><thead><tr><th>Deployment</th>${head}</tr></thead><tbody>${body}</tbody></table></div>` : emptyBox(t('empty.none'))}`;
+}
+
+// ---------- Nginx ----------
+const nginxTargets = () => { try { return JSON.parse(store.get('nginxTargets') || '[]'); } catch { return []; } };
+const saveTargets = (a) => store.set('nginxTargets', JSON.stringify(a));
+// probes run in the background so a slow target never delays the main refresh
+async function runProbes(only) {
+  const urls = only ? [only] : nginxTargets();
+  if (!urls.length || (S.probing && !only)) return;
+  if (!only) S.probing = true;
+  try {
+    const res = await Promise.allSettled(urls.map((u) => api('/probe', { method: 'POST', body: { url: u } })));
+    urls.forEach((u, i) => {
+      S.probes[u] = res[i].status === 'fulfilled' ? res[i].value : { url: u, up: false, error: res[i].reason.message, at: new Date().toISOString() };
+    });
+  } finally { if (!only) S.probing = false; }
+  checkNginxAlerts();
+  if (S.view === 'nginx' || S.view === 'health') render(); else renderNav();
+}
+function tlsCell(x) {
+  if (!x) return '<span class="muted">—</span>';
+  const days = Math.floor((new Date(x.validTo) - Date.now()) / 86400000);
+  const cls = days < 0 ? 'err' : days < 14 ? 'warn' : 'ok';
+  const tip = `${x.subject} · ${x.issuer} · ${new Date(x.validTo).toLocaleDateString()}${x.error ? ' · ' + x.error : ''}`;
+  return `<span class="pill ${cls}" title="${esc(tip)}">${days < 0 ? t('ng.expired') : t('ng.days', { n: days })}</span>${x.authorized ? '' : ` <span class="pill warn" title="${esc(x.error || '')}">⚠ TLS</span>`}`;
+}
+function nginxView() {
+  const urls = nginxTargets();
+  const rows = urls.map((u) => {
+    const r = S.probes[u];
+    const st = !r ? '<span class="muted">…</span>' : r.up ? `<span class="pill ok">${t('ng.up')}</span>` : `<span class="pill err" title="${esc(r.error || '')}">${t('ng.down')}</span>`;
+    const stub = r?.stub ? `<span title="accepts ${r.stub.accepts} · handled ${r.stub.handled} · reading ${r.stub.reading} · writing ${r.stub.writing} · waiting ${r.stub.waiting}">${r.stub.active} / ${r.stub.requests.toLocaleString()}</span>` : '<span class="muted">—</span>';
+    return `<tr><td class="mono"><a href="${esc(u)}" target="_blank" rel="noopener">${esc(u)}</a></td><td>${st}</td>
+      <td class="num">${r?.status ?? '—'}</td><td class="num">${r?.ms != null ? r.ms + ' ms' : '—'}</td>
+      <td class="mono muted">${esc(r?.server || (r?.error ? r.error : '—'))}</td><td>${tlsCell(r?.tls)}</td><td class="num">${stub}</td>
+      <td class="muted">${r ? ago(r.at) : ''}</td>
+      <td><div class="actions"><button class="btn sm" data-act="ngcheck" data-url="${esc(u)}">↻</button><button class="btn sm danger" data-act="ngdel" data-url="${esc(u)}">✕</button></div></td></tr>`;
   }).join('');
+  const isNginx = (o) => /nginx|ingress/i.test(o.name + ' ' + (o.images || []).join(' '));
+  const inCluster = [...(S.data.deployments || []), ...(S.data.statefulsets || []), ...(S.data.daemonsets || [])].filter(isNginx).filter((o) => matchQ(o.name));
+  return `<h2>${t('ng.ext')}</h2>
+  <form class="toolbar" data-form="ng">
+    <input type="url" id="ngUrl" class="url-in" placeholder="${esc(t('ng.placeholder'))}" required>
+    <button class="btn primary" type="submit">${t('ng.add')}</button>
+    <span class="muted small">${t('ng.stubHint')}</span>
+  </form>
+  ${urls.length ? `<div class="tbl-wrap"><table><thead><tr><th>URL</th><th>${t('col.status')}</th><th>HTTP</th><th>${t('ng.time')}</th><th>Server</th><th>TLS</th><th title="stub_status: active / requests">${t('ng.conns')}</th><th>${t('ng.checked')}</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>` : emptyBox(t('ng.none'))}
+  <h2 style="margin-top:20px">${t('ng.cluster')}</h2>
+  ${inCluster.length ? `<div class="tbl-wrap"><table><thead><tr><th>${t('col.name')}</th><th>Namespace</th><th>Image</th><th>Ready</th></tr></thead><tbody>${inCluster.map((o) =>
+    `<tr><td><b>${esc(o.name)}</b></td><td class="muted">${esc(o.namespace)}</td><td class="mono muted">${esc((o.images || []).join(', '))}</td><td>${readyPill(o.ready, o.replicas ?? o.desired)}</td></tr>`).join('')}</tbody></table></div>` : emptyBox(t('ng.clusterNone'))}`;
+}
+
+// ---------- rollout history (drawer) ----------
+function historyHTML(list) {
+  if (!list.length) return `<div class="note">${t('empty.none')}</div>`;
+  return `<table class="hist"><thead><tr><th>${t('hist.rev')}</th><th>Image</th><th>Pods</th><th>${t('col.age')}</th><th>ReplicaSet</th></tr></thead><tbody>${list.map((h) =>
+    `<tr class="${h.current ? 'cur' : ''}"><td>#${h.revision}${h.current ? ` <span class="pill ok">${t('hist.current')}</span>` : ''}</td>
+     <td>${h.images.map((i) => `<span title="${esc(i)}">${esc(imgTag(i))}</span>`).join(', ')}${h.cause ? `<div class="c-dim">${esc(h.cause)}</div>` : ''}</td>
+     <td>${h.ready}/${h.replicas}</td><td>${ago(h.created)}</td><td class="c-dim">${esc(h.name)}</td></tr>`).join('')}</tbody></table>`;
+}
+const historyText = (list) => list.map((h) => `#${h.revision}${h.current ? ' (current)' : ''}\t${h.images.join(', ')}\t${h.ready}/${h.replicas}\t${h.created}\t${h.name}`).join('\n');
+
+// ---------- render ----------
+function navCount(k) {
+  if (S.forbidden?.[k]) return '🔒';
+  if (k === 'resources') return S.forbidden?.metrics ? '🔒' : '';
+  if (k === 'health') {
+    if (A.unread) return `<span class="badge">${A.unread}</span>`;
+    const n = healthIssues().total; return n || '';
+  }
+  if (k === 'nginx') {
+    const down = nginxTargets().filter((u) => S.probes[u] && !S.probes[u].up).length;
+    return down ? `<span class="badge">${down}</span>` : '';
+  }
+  const n = S.data[k];
+  return n ? n.length : '';
+}
+// line icons for the top sections (24px grid, stroke = currentColor)
+const SEC_ICON = {
+  overview: '<path d="M4 4h7v7H4zM13 4h7v4h-7zM13 10h7v10h-7zM4 13h7v7H4z"/>',
+  'grp.monitor': '<path d="M3 12h4l3-8 4 16 3-8h4"/>',
+  'grp.workloads': '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>',
+  'grp.network': '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/>',
+  'grp.config': '<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>',
+  'grp.cluster': '<rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/>',
+};
+const secIcon = (k) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${SEC_ICON[k]}</svg>`;
+const groupOf = (v) => NAV.find(([, vs]) => vs.includes(v));
+const groupKey = (g) => g[0] || 'overview';
+// small badge on a section: unread alerts / health issues for Monitoring, unhealthy pods for Workloads
+function sectionBadge(key) {
+  if (key === 'grp.monitor') {
+    const down = nginxTargets().filter((u) => S.probes[u] && !S.probes[u].up).length;
+    if (A.unread || down) return `<span class="badge">${A.unread + down}</span>`;
+    const n = healthIssues().total;
+    return n ? `<span class="badge warn">${n}</span>` : '';
+  }
+  if (key === 'grp.workloads') {
+    const bad = (S.data.pods || []).filter((p) => podHealth(p) === 'err').length;
+    return bad ? `<span class="badge">${bad}</span>` : '';
+  }
+  return '';
+}
+function renderNav() {
+  const cur = groupOf(S.view);
+  $('#sections').innerHTML = NAV.map((g) => {
+    const key = groupKey(g), active = g === cur;
+    const target = active ? S.view : S.lastIn[key] || g[1][0];
+    return `<button class="sec ${active ? 'active' : ''}" data-view="${target}">${secIcon(key)}<span>${g[0] ? t(g[0]) : t('view.overview')}</span>${sectionBadge(key)}</button>`;
+  }).join('');
+  const subs = cur && cur[1].length > 1 ? cur[1] : [];
+  $('#subtabs').hidden = !subs.length;
+  $('#subtabs').innerHTML = subs.map((k) =>
+    `<button class="chip ${S.view === k ? 'active' : ''}" data-view="${k}">${viewTitle(k)}<span class="count">${navCount(k)}</span></button>`).join('');
 }
 function renderFoot() {
   const i = S.info; if (!i) return;
-  $('#foot').innerHTML = `<div>${t('foot.server')}: <b>${esc(i.server || '-')}</b></div><div>${t('foot.version')}: <b>${esc(i.version || t('unknown'))}</b></div><div>${t('foot.file')}: ${esc(i.kubeconfig)}</div>`;
+  $('#foot').innerHTML = `<span>${t('foot.server')}: <b>${esc(i.server || '-')}</b></span><span>${t('foot.version')}: <b>${esc(i.version || t('unknown'))}</b></span><span title="${esc(i.kubeconfig)}">${t('foot.file')}: ${esc(i.kubeconfig)}</span>`;
   const all = $('#ns option[value="_all"]'); if (all) all.textContent = t('ns.all');
 }
 function renderConn() {
   if (S.connOk === undefined) return;
   $('#conn').className = 'dot ' + (S.connOk ? 'ok' : 'err');
   $('#connText').textContent = S.connOk ? t('conn.ok', { t: S.connAt }) : t('conn.err');
+  $('.conn').title = $('#connText').textContent; // the text is hidden on narrower screens
 }
 function render() {
-  $('#title').textContent = viewTitle(S.view);
   document.title = `${viewTitle(S.view)} · Anchor K8s`;
+  if (S.view === 'health') A.unread = 0; // opening the tab marks alerts as seen
   renderNav();
+  // don't wipe a field the user is typing in (alert threshold, nginx URL) on an auto-refresh
+  const f = document.activeElement;
+  if (f && $('#content').contains(f) && f.matches('input, select, textarea')) return;
   const err = S.error ? `<div class="error-box">${esc(S.error)}</div>` : '';
-  $('#content').innerHTML = err + (S.view === 'overview' ? overview() : table(S.view, filtered(S.view)));
+  const views = { overview, resources: resourcesView, health: healthView, versions: versionsView, nginx: nginxView };
+  $('#content').innerHTML = err + (views[S.view] ? views[S.view]() : table(S.view, filtered(S.view)));
 }
 
 async function load() {
   const ns = encodeURIComponent(S.ns);
-  const kinds = ['pods', 'deployments', 'services', 'ingresses', 'events'];
-  const res = await Promise.allSettled([...kinds.map((k) => api(`/${ns}/${k}`)), api('/nodes')]);
+  const core = ['pods', 'deployments', 'services', 'ingresses', 'events', 'nodes'];
+  const extra = LAZY.includes(S.view) ? [S.view] : [];
+  const nodeMx = S.view === 'resources' || S.view === 'nodes';
+  const names = [...core, 'metrics', ...(nodeMx ? ['nodeMetrics'] : []), ...extra];
+  const url = (k) => (k === 'nodes' ? '/nodes' : k === 'nodeMetrics' ? '/nodes/metrics' : `/${ns}/${k}`);
+  const res = await Promise.allSettled(names.map((k) => api(url(k))));
   const errs = [];
   S.forbidden = {};
-  [...kinds, 'nodes'].forEach((k, i) => {
-    if (res[i].status === 'fulfilled') S.data[k] = res[i].value;
-    else if (/forbidden/i.test(res[i].reason.message)) { S.data[k] = []; S.forbidden[k] = true; }
-    else { S.data[k] = []; errs.push(`${k}: ${res[i].reason.message}`); }
+  S.metricsError = null;
+  names.forEach((k, i) => {
+    const r = res[i];
+    if (r.status === 'fulfilled') S.data[k] = r.value;
+    else if (/forbidden/i.test(r.reason.message)) { S.data[k] = []; S.forbidden[k] = true; }
+    else if (k === 'metrics' || k === 'nodeMetrics') { S.data[k] = []; S.metricsError = r.reason.message; } // no metrics-server is not a connection error
+    else { S.data[k] = []; errs.push(`${k}: ${r.reason.message}`); }
   });
   S.error = errs.length ? errs.join('\n') : null;
-  S.connOk = errs.length + Object.keys(S.forbidden).length < 6;
+  S.connOk = core.filter((k, i) => res[i].status === 'rejected').length < core.length;
   S.connAt = new Date().toLocaleTimeString();
+  recordMetrics();
+  checkPodAlerts();
+  if (S.view === 'versions') await loadVersions();
+  runProbes();
   renderConn();
   render();
 }
@@ -611,11 +1375,12 @@ async function init() {
   }
   const i = S.info;
   $('#demoBanner').hidden = !i.demo;
-  $('#ctx').innerHTML = i.contexts.map((c) => `<option ${c.name === i.currentContext ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
+  $('#ctx').innerHTML = i.contexts.map((c) => `<option ${c.name === i.currentContext ? 'selected' : ''} title="${esc(c.file || '')}">${esc(c.name)}</option>`).join('');
   let nsNames = [], canListNs = true;
   try { nsNames = (await api('/namespaces')).map((n) => n.name); }
   catch { canListNs = false; nsNames = [...new Set(i.contexts.map((c) => c.namespace).filter(Boolean))]; }
   if (!nsNames.includes(i.defaultNamespace)) nsNames.unshift(i.defaultNamespace);
+  S.nsNames = nsNames;
   const saved = store.get('ns:' + i.currentContext);
   S.ns = saved && ((saved === '_all' && canListNs) || nsNames.includes(saved)) ? saved : i.defaultNamespace;
   $('#ns').innerHTML = (canListNs ? `<option value="_all"></option>` : '') + nsNames.map((n) => `<option ${n === S.ns ? 'selected' : ''}>${esc(n)}</option>`).join('');
@@ -889,15 +1654,23 @@ function stopLogs() { clearInterval(D.timer); D.timer = null; D.req++; $('#dLive
 async function drawerLoad() {
   if (isLogs()) { setLogAuto(); return loadLogs(true); }
   const body = $('#dBody'); body.textContent = t('loading');
+  const base = `/${encodeURIComponent(D.ns)}`, nm = encodeURIComponent(D.name);
   try {
-    D.text = (await api(`/${encodeURIComponent(D.ns)}/${D.kind === 'podyaml' ? 'pods' : 'deployments'}/${encodeURIComponent(D.name)}/yaml`)).text;
+    if (D.kind === 'history') {
+      const list = await api(`${base}/deployments/${nm}/history`);
+      D.text = historyText(list);
+      body.innerHTML = historyHTML(list);
+      return;
+    }
+    const kind = D.kind === 'podyaml' ? 'pods' : D.kind === 'depyaml' ? 'deployments' : D.res;
+    D.text = (await api(`${base}/${kind}/${nm}/yaml`)).text;
     body.textContent = D.text;
   } catch (e) { body.textContent = t('err', { m: e.message }); }
 }
-const drawerTitle = () => (isLogs() ? t('log.title') : 'YAML') + ' · ' + D.name;
-function openDrawer(kind, ns, name) {
+const drawerTitle = () => (isLogs() ? t('log.title') : D.kind === 'history' ? t('hist.title') : 'YAML') + ' · ' + D.name;
+function openDrawer(kind, ns, name, opts = {}) {
   stopLogs();
-  Object.assign(D, { kind, ns, name, lines: [], text: '', updated: null, open: new Set() });
+  Object.assign(D, { kind, ns, name, res: opts.res, lines: [], text: '', updated: null, open: new Set() });
   const log = isLogs();
   $('#dTitle').textContent = drawerTitle();
   $('#dTools').hidden = !log;
@@ -908,7 +1681,7 @@ function openDrawer(kind, ns, name) {
   D.app = cs[0] || '';
   $('#dContainer').hidden = cs.length < 2;
   $('#dContainer').innerHTML = cs.map((c) => `<option>${esc(c)}</option>`).join('');
-  $('#dPrev').checked = false;
+  $('#dPrev').checked = !!opts.previous;
   $('#dFilter').value = '';
   $('#dBody').classList.toggle('nowrap', log && !$('#dWrap').checked);
   $('#drawer').classList.add('open'); $('#drawerBg').classList.add('open');
@@ -949,11 +1722,13 @@ $('#dDownload').addEventListener('click', () => {
 });
 
 // ---------- events ----------
-$('#nav').addEventListener('click', (e) => {
-  const b = e.target.closest('[data-view]'); if (!b) return;
-  S.view = b.dataset.view; store.set('view', S.view);
-  $('#side').classList.remove('open'); render();
-});
+// top sections and their sub-tabs
+for (const el of ['#sections', '#subtabs']) {
+  $(el).addEventListener('click', (e) => {
+    const b = e.target.closest('[data-view]');
+    if (b) setView(b.dataset.view);
+  });
+}
 $('#content').addEventListener('click', async (e) => {
   const go = e.target.closest('[data-go]');
   const th = e.target.closest('th[data-sort]');
@@ -966,7 +1741,12 @@ $('#content').addEventListener('click', async (e) => {
     const { act, ns, name } = b.dataset;
     const enc = `/${encodeURIComponent(ns)}`;
     try {
-      if (act === 'logs' || act === 'podyaml' || act === 'depyaml') return openDrawer(act, ns, name);
+      if (act === 'logs' || act === 'podyaml' || act === 'depyaml' || act === 'history') return openDrawer(act, ns, name);
+      if (act === 'prevlogs') return openDrawer('logs', ns, name, { previous: true });
+      if (act === 'yaml') return openDrawer('yaml', ns, name, { res: b.dataset.kind });
+      if (act === 'alclear') { A.log = []; A.unread = 0; render(); return; }
+      if (act === 'ngcheck') { await runProbes(b.dataset.url); return; }
+      if (act === 'ngdel') { saveTargets(nginxTargets().filter((u) => u !== b.dataset.url)); delete S.probes[b.dataset.url]; render(); return; }
       if (act === 'delpod') {
         if (!confirm(t('confirm.delpod', { name }))) return;
         await api(`${enc}/pods/${encodeURIComponent(name)}`, { method: 'DELETE' }); toast(t('toast.deleted'));
@@ -989,8 +1769,43 @@ $('#content').addEventListener('click', async (e) => {
     } catch (err) { toast(t('err', { m: err.message })); }
     return;
   }
-  if (go) { S.view = go.dataset.go; render(); }
+  const rm = e.target.closest('[data-resmode]');
+  if (rm) { S.resMode = rm.dataset.resmode; render(); return; }
+  if (go) { setView(go.dataset.go); }
 });
+// settings inside the content area (alert rules, versions filter)
+$('#content').addEventListener('change', async (e) => {
+  const el = e.target;
+  if (el.dataset.rule) {
+    const k = el.dataset.rule;
+    A.rules[k] = el.type === 'checkbox' ? el.checked : Math.max(0, Number(el.value) || 0);
+    if (k === 'notify' && el.checked && 'Notification' in window && Notification.permission !== 'granted') {
+      if ((await Notification.requestPermission()) !== 'granted') { A.rules.notify = false; el.checked = false; toast(t('al.denied')); }
+    }
+    if (k === 'mem') A.memOver.clear();
+    saveRules();
+    el.blur();
+  }
+  if (el.matches('[data-vonly]')) { S.vOnlyDiff = el.checked; el.blur(); render(); }
+});
+$('#content').addEventListener('submit', async (e) => {
+  if (e.target.dataset.form !== 'ng') return;
+  e.preventDefault();
+  const inp = $('#ngUrl'), u = inp.value.trim();
+  if (!/^https?:\/\//i.test(u)) return;
+  const list = nginxTargets();
+  if (!list.includes(u)) saveTargets([...list, u]);
+  inp.blur();
+  render();
+  await runProbes(u);
+});
+// switching tabs: lazy kinds and the versions matrix are fetched on first open
+function setView(v) {
+  S.view = v; store.set('view', v);
+  const g = groupOf(v); if (g) S.lastIn[groupKey(g)] = v; // a section reopens on the tab used last
+  render();
+  if (LAZY.includes(v) || v === 'versions' || v === 'resources' || v === 'nodes') load();
+}
 $('#ns').addEventListener('change', () => {
   S.ns = $('#ns').value; store.set('ns:' + S.info.currentContext, S.ns);
   S.data = {}; render(); load();
@@ -1002,7 +1817,6 @@ $('#ctx').addEventListener('change', async () => {
 $('#q').addEventListener('input', () => { S.q = $('#q').value; if (S.view === 'overview' && S.q) S.view = 'pods'; render(); });
 $('#refresh').addEventListener('click', load);
 $('#auto').addEventListener('change', setAuto);
-$('#menu').addEventListener('click', () => $('#side').classList.toggle('open'));
 $('#lang').addEventListener('change', () => {
   LANG = $('#lang').value; store.set('lang', LANG);
   applyI18n(); renderFoot(); renderConn(); render();

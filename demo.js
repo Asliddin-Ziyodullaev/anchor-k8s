@@ -43,9 +43,43 @@ for (const d of deployments) {
       owner: 'ReplicaSet',
       containers: [d.name],
       images: d.images,
+      app: d.name,
+      cpuReq: d.name.includes('gateway') ? 0.25 : null,
+      cpuLim: null,
+      memReq: d.name.includes('gateway') ? 256 * 2 ** 20 : null,
+      memLim: d.name === 'grafana' ? 512 * 2 ** 20 : null,
+      lastTerm: status === 'CrashLoopBackOff' ? { container: d.name, reason: 'Error', exitCode: 1, at: ago(2) }
+        : d.name === 'payments-service' && i === 0 ? { container: d.name, reason: 'OOMKilled', exitCode: 137, at: ago(40) } : null,
     });
   }
 }
+
+// steady per-pod baseline + noise, so the Resources tab and its trend lines have something to show
+const baseMem = (p) => (64 + (rnd(p.name) % 900)) * 2 ** 20;
+const baseCpu = (p) => ((rnd(p.name) % 400) + 5) / 1000;
+let tick = 0;
+
+const statefulsets = [
+  { namespace: 'mobile-dev', name: 'redis', replicas: 3, ready: 3, images: ['redis:7.2-alpine'], created: ago(60 * 24 * 30) },
+  { namespace: 'monitoring', name: 'loki', replicas: 1, ready: 1, images: ['grafana/loki:3.1.0'], created: ago(60 * 24 * 20) },
+];
+const daemonsets = [
+  { namespace: 'monitoring', name: 'node-exporter', desired: 4, ready: 4, images: ['prom/node-exporter:v1.8.2'], created: ago(60 * 24 * 90) },
+];
+const jobs = [
+  { namespace: 'mobile-dev', name: 'db-migrate-1131', status: 'Completed', completions: '1/1', duration: 42, created: ago(300) },
+  { namespace: 'mobile-dev', name: 'report-export-28801', status: 'Failed', completions: '0/1', duration: 610, created: ago(90) },
+];
+const cronjobs = [
+  { namespace: 'mobile-dev', name: 'report-export', schedule: '0 */6 * * *', suspend: false, active: 0, lastRun: ago(90), created: ago(60 * 24 * 40) },
+];
+const configmaps = deployments.filter((d) => d.namespace === 'mobile-dev').map((d) => ({
+  namespace: d.namespace, name: d.name + '-config', keys: 2, keyNames: 'application.yml, logback.xml', created: d.created,
+}));
+const pvcs = [
+  { namespace: 'mobile-dev', name: 'data-redis-0', status: 'Bound', capacity: '8Gi', storageClass: 'longhorn', access: 'ReadWriteOnce', volume: 'pvc-1f2e', created: ago(60 * 24 * 30) },
+  { namespace: 'monitoring', name: 'storage-loki-0', status: 'Bound', capacity: '50Gi', storageClass: 'longhorn', access: 'ReadWriteOnce', volume: 'pvc-9a8b', created: ago(60 * 24 * 20) },
+];
 
 const services = deployments.map((d, i) => ({
   namespace: d.namespace,
@@ -115,6 +149,33 @@ export function demo(app) {
   app.get('/api/nodes', (req, res) => res.json(nodes.map((name, i) => ({
     name, status: 'Ready', roles: i === 0 ? 'control-plane' : 'worker', version: 'v1.30.4', cpu: i === 0 ? '4' : '8', memory: i === 0 ? '8Gi' : '32Gi', created: ago(60 * 24 * 120),
   }))));
+  app.get('/api/nodes/metrics', (req, res) => res.status(403).json({ error: 'nodes.metrics.k8s.io is forbidden: User "system:serviceaccount:dev:mobile-dev" cannot list resource "nodes"' }));
+  app.get('/api/:ns/metrics', (req, res) => {
+    tick++;
+    res.json(byNs(pods, req.params.ns).filter((p) => p.status === 'Running').map((p) => ({
+      name: p.name, namespace: p.namespace,
+      cpu: baseCpu(p) * (0.6 + Math.random() * 0.8),
+      // payments-service slowly "leaks" so its trend line climbs
+      memory: baseMem(p) * (p.name.startsWith('payments') ? 1 + tick * 0.03 : 0.95 + Math.random() * 0.1),
+    })));
+  });
+  app.get('/api/:ns/statefulsets', (req, res) => res.json(byNs(statefulsets, req.params.ns)));
+  app.get('/api/:ns/daemonsets', (req, res) => res.json(byNs(daemonsets, req.params.ns)));
+  app.get('/api/:ns/jobs', (req, res) => res.json(byNs(jobs, req.params.ns)));
+  app.get('/api/:ns/cronjobs', (req, res) => res.json(byNs(cronjobs, req.params.ns)));
+  app.get('/api/:ns/configmaps', (req, res) => res.json(byNs(configmaps, req.params.ns)));
+  app.get('/api/:ns/pvcs', (req, res) => res.json(byNs(pvcs, req.params.ns)));
+  app.get('/api/:ns/deployments/:name/history', (req, res) => {
+    const d = deployments.find((x) => x.name === req.params.name);
+    if (!d) return res.status(404).json({ error: 'not found' });
+    const tag = d.images[0].split(':').pop();
+    const prev = tag.replace(/(\d+)(?!.*\d)/, (m) => Math.max(0, Number(m) - 1));
+    res.json([
+      { revision: 7, name: `${d.name}-7c9d5f`, images: d.images, replicas: d.replicas, ready: d.ready, cause: '', created: ago(60 * 26), current: true },
+      { revision: 6, name: `${d.name}-5b8a21`, images: [d.images[0].replace(tag, prev)], replicas: 0, ready: 0, cause: '', created: ago(60 * 24 * 6), current: false },
+      { revision: 5, name: `${d.name}-49f0c3`, images: [d.images[0].replace(tag, prev + '-rc1')], replicas: 0, ready: 0, cause: '', created: ago(60 * 24 * 14), current: false },
+    ]);
+  });
   app.get('/api/:ns/pods', (req, res) => res.json(byNs(pods, req.params.ns)));
   app.get('/api/:ns/deployments', (req, res) => res.json(byNs(deployments, req.params.ns)));
   app.get('/api/:ns/services', (req, res) => res.json(byNs(services, req.params.ns)));
@@ -132,6 +193,7 @@ export function demo(app) {
   const yaml = (kind, o) => `apiVersion: ${kind === 'Pod' ? 'v1' : 'apps/v1'}\nkind: ${kind}\nmetadata:\n  name: ${o.name}\n  namespace: ${o.namespace}\nspec:\n  containers:\n${o.images.map((im) => `    - image: ${im}`).join('\n')}\n`;
   app.get('/api/:ns/pods/:name/yaml', (req, res) => res.json({ text: yaml('Pod', pods.find((x) => x.name === req.params.name) || { name: '?', namespace: '?', images: [] }) }));
   app.get('/api/:ns/deployments/:name/yaml', (req, res) => res.json({ text: yaml('Deployment', deployments.find((x) => x.name === req.params.name) || { name: '?', namespace: '?', images: [] }) }));
+  app.get('/api/:ns/:kind/:name/yaml', (req, res) => res.json({ text: `kind: ${req.params.kind}\nmetadata:\n  name: ${req.params.name}\n  namespace: ${req.params.ns}\n# (demo)\n` }));
   app.delete('/api/:ns/pods/:name', (req, res) => {
     pods = pods.map((p) => (p.name === req.params.name ? { ...p, status: 'Terminating' } : p));
     res.json({ ok: true });

@@ -8,8 +8,14 @@ A lightweight web dashboard for Kubernetes that connects through a kubeconfig. O
 
 ## Features
 
-- Switch contexts and namespaces
-- Pods, Deployments, Services, Ingresses, Events, Nodes, with search, sorting and auto-refresh
+- Switch contexts and namespaces; several kubeconfig files are merged into one context list
+- Built-in **SSH tunnels**: `start.sh` opens them before the server starts, for clusters behind a bastion host ([details](#multiple-environments-and-ssh-tunnels))
+- Pods, Deployments, StatefulSets, DaemonSets, Jobs, CronJobs, Services, Ingresses, ConfigMaps, PVCs, Events, Nodes, with search, sorting and auto-refresh
+- **Resources tab**: live RAM / CPU per pod or per app from metrics-server, totals, request / limit, a trend line per pod (spots memory leaks) and pods without a memory limit
+- **Health tab**: OOMKilled, CrashLoop, not-ready pods, readiness / liveness probe failures and the reason of every pod's last restart (with a link to its previous log)
+- **Alerts**: RAM threshold, pod restarts and nginx up/down, shown in the app and optionally as browser notifications
+- **Versions tab**: image tags of every deployment side by side across namespaces, with differences highlighted; rollout history per deployment
+- **Nginx tab**: checks external nginx servers (up/down, response time, TLS certificate expiry, `stub_status` connections) and lists nginx running inside the cluster
 - Overview of unhealthy pods and recent warnings
 - **Pod logs**: `--tail`, `--timestamps`, `--previous`, container picker, auto-refresh, search and filter, download, fullscreen
 - **Spring Boot log view**: JSON log lines are shown like the Spring Boot console, with colored levels, abbreviated loggers, expandable payloads and stack traces ([details](#spring-boot-log-view))
@@ -38,9 +44,10 @@ The browser opens automatically at http://127.0.0.1:8888
 
 ```bash
 ./start.sh            # start
-./start.sh stop       # stop
+./start.sh stop       # stop the server and close the tunnels
 ./start.sh restart    # restart
-./start.sh status     # is it running?
+./start.sh status     # server and tunnel status
+./start.sh tunnel     # (re)open only the SSH tunnels
 ./start.sh logs       # follow the server log
 ```
 
@@ -55,6 +62,18 @@ Without the script: `node server.js /path/to/kubeconfig.yaml` (port from `PORT`,
 ```bash
 npm run demo     # fake data, http://127.0.0.1:8090
 ```
+
+## Monitoring tabs
+
+| Tab | Data source | Notes |
+|---|---|---|
+| Resources | `metrics.k8s.io` (metrics-server) | Per-node usage appears only if the kubeconfig user may read node metrics. Trends live in the browser while the page is open. |
+| Health | pod status and `Unhealthy` events | The last restart reason comes from the container's `lastState.terminated` (e.g. `OOMKilled`, exit code 137). |
+| Alerts | Health tab → Alerts | Rules are saved per browser. Notifications only fire while the dashboard is open. |
+| Versions | deployments of every namespace you can access | Click ⟲ on a cell (or **History** on a deployment) for the rollout history. |
+| Nginx | `POST /api/probe` from the server | Add any `http(s)://` URL. Point it at an `stub_status` page (e.g. `/nginx_status`) to also get connection and request counts. Targets are saved per browser. |
+
+StatefulSets, DaemonSets, Jobs, CronJobs, ConfigMaps and PVCs are fetched only while their tab is open, so the regular refresh stays light. Secrets are intentionally not shown.
 
 ## Spring Boot log view
 
@@ -72,6 +91,37 @@ The **Spring** toggle in the log toolbar (on by default, remembered per browser)
 - **Plain text lines:** ANSI colors are applied, Spring Boot text lines and stack frames are colored, and the `kubectl --timestamps` prefix is kept.
 - **Search:** a hit inside a collapsed payload opens it.
 - **Raw log:** turn the toggle off to see the raw log. Copy and download always use the raw log.
+
+## Multiple environments and SSH tunnels
+
+### Several kubeconfig files
+
+List them with `:` (like `$KUBECONFIG`). They are merged the way kubectl does it, and every context appears in the dashboard's context list (hover a context to see its file):
+
+```bash
+KUBECONFIG_FILE=~/.kube/dev.yaml:~/.kube/staging.yaml:~/.kube/prod.yaml
+```
+
+If two files define the same name, the first one wins. Files are re-read on every context switch, so kubeconfig edits apply without a restart.
+
+### Clusters behind a bastion (SSH)
+
+Put the tunnels in `.env`. `./start.sh` opens them before starting the server, and `./start.sh stop` closes them. Each tunnel is plain `ssh` arguments; separate several tunnels with `;`:
+
+```bash
+SSH_TUNNELS="-D 1080 user@bastion-prod; -L 16443:10.0.7.4:6443 user@bastion-stage"
+```
+
+Then point the cluster in the kubeconfig at the tunnel:
+
+| Tunnel | Kubeconfig `cluster:` |
+|---|---|
+| SOCKS proxy: `-D 1080 user@bastion` | keep the real `server:` and add `proxy-url: socks5://127.0.0.1:1080` |
+| Port forward: `-L 16443:10.0.7.4:6443 user@bastion` | `server: https://127.0.0.1:16443` (add `tls-server-name:` if the certificate doesn't cover 127.0.0.1) |
+
+The SOCKS proxy is the easier option: one tunnel covers every cluster behind that bastion, and TLS checks keep working because the real address is used.
+
+Other ssh options work as usual: `-p 2222`, `-i ~/.ssh/key`, `-J jump-host`, or a `Host` alias from `~/.ssh/config`. Password and key passphrase prompts appear in the terminal when you run `./start.sh`. If the connection drops, the tunnel closes (`./start.sh status` shows it); reopen it with `./start.sh tunnel`.
 
 ## Working with Argo CD
 
