@@ -1,0 +1,156 @@
+// Fake data so the UI can be tried without a cluster:  npm run demo
+const now = Date.now();
+const ago = (min) => new Date(now - min * 60000).toISOString();
+
+const namespaces = ['default', 'mobile-dev', 'mobile-api', 'monitoring', 'ingress-nginx', 'kube-system'];
+
+const deployments = [
+  ['mobile-dev', 'mobile-gateway', 3, 3, 'registry.local/mobile/gateway:1.14.2'],
+  ['mobile-dev', 'auth-service', 2, 2, 'registry.local/mobile/auth:2.3.0'],
+  ['mobile-dev', 'payments-service', 2, 1, 'registry.local/mobile/payments:0.9.7'],
+  ['mobile-dev', 'notification-worker', 1, 1, 'registry.local/mobile/notify:1.2.1'],
+  ['mobile-dev', 'cards-service', 2, 0, 'registry.local/mobile/cards:3.0.0-rc1'],
+  ['mobile-api', 'bff-android', 2, 2, 'registry.local/mobile/bff:5.1.0'],
+  ['mobile-api', 'bff-ios', 2, 2, 'registry.local/mobile/bff:5.1.0'],
+  ['monitoring', 'grafana', 1, 1, 'grafana/grafana:11.2.0'],
+  ['monitoring', 'prometheus-server', 1, 1, 'prom/prometheus:v2.54.1'],
+  ['ingress-nginx', 'ingress-nginx-controller', 2, 2, 'registry.k8s.io/ingress-nginx/controller:v1.11.2'],
+  ['kube-system', 'coredns', 2, 2, 'registry.k8s.io/coredns/coredns:v1.11.1'],
+].map(([namespace, name, replicas, ready, image], i) => ({
+  namespace, name, replicas, ready, updated: replicas, available: ready, images: [image], created: ago(60 * 24 * (i + 2)),
+  argocd: namespace.startsWith('mobile') ? name : null,
+}));
+
+const nodes = ['dev-master-01', 'dev-worker-01', 'dev-worker-02', 'dev-worker-03'];
+const rnd = (s) => Math.abs([...s].reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 7));
+
+let pods = [];
+for (const d of deployments) {
+  for (let i = 0; i < Math.max(d.replicas, 1); i++) {
+    const h = rnd(d.name + ':' + i * 7919);
+    const suffix = h.toString(36).slice(0, 5);
+    let status = i < d.ready ? 'Running' : (d.name === 'cards-service' ? 'CrashLoopBackOff' : 'Pending');
+    if (d.replicas === 0) status = 'Completed';
+    pods.push({
+      name: `${d.name}-${rnd(d.name).toString(36).slice(0, 9)}-${suffix}${i}`,
+      namespace: d.namespace,
+      status,
+      ready: status === 'Running' ? '1/1' : '0/1',
+      restarts: status === 'CrashLoopBackOff' ? 14 + i : h % 3,
+      node: status === 'Pending' ? '-' : nodes[1 + (h % 3)],
+      ip: status === 'Pending' ? '-' : `10.244.${h % 4}.${h % 250}`,
+      created: ago((h % 3000) + 5),
+      owner: 'ReplicaSet',
+      containers: [d.name],
+      images: d.images,
+    });
+  }
+}
+
+const services = deployments.map((d, i) => ({
+  namespace: d.namespace,
+  name: d.name,
+  type: d.name.includes('ingress') ? 'LoadBalancer' : 'ClusterIP',
+  clusterIP: `10.96.${i}.${10 + i * 7}`,
+  external: d.name.includes('ingress') ? '192.168.10.50' : '-',
+  ports: d.name.includes('ingress') ? '80:30080/TCP, 443:30443/TCP' : '8080/TCP',
+  created: d.created,
+}));
+
+const ingresses = [
+  { namespace: 'mobile-dev', name: 'mobile-gateway', className: 'nginx', hosts: 'mobile-dev.example.local', address: '192.168.10.50', created: ago(9000) },
+  { namespace: 'mobile-api', name: 'bff', className: 'nginx', hosts: 'bff-dev.example.local', address: '192.168.10.50', created: ago(8000) },
+  { namespace: 'monitoring', name: 'grafana', className: 'nginx', hosts: 'grafana-dev.example.local', address: '192.168.10.50', created: ago(20000) },
+];
+
+const events = [
+  { namespace: 'mobile-dev', type: 'Warning', reason: 'BackOff', object: 'Pod/' + pods.find((p) => p.status === 'CrashLoopBackOff')?.name, message: 'Back-off restarting failed container cards-service', count: 87, last: ago(1) },
+  { namespace: 'mobile-dev', type: 'Warning', reason: 'FailedScheduling', object: 'Pod/' + pods.find((p) => p.status === 'Pending')?.name, message: '0/4 nodes are available: 3 Insufficient memory, 1 node(s) had untolerated taint.', count: 12, last: ago(3) },
+  { namespace: 'mobile-dev', type: 'Normal', reason: 'ScalingReplicaSet', object: 'Deployment/payments-service', message: 'Scaled up replica set payments-service-7c9d to 2', count: 1, last: ago(4) },
+  { namespace: 'mobile-dev', type: 'Normal', reason: 'Pulled', object: 'Pod/' + pods[0].name, message: 'Container image "registry.local/mobile/gateway:1.14.2" already present on machine', count: 1, last: ago(25) },
+  { namespace: 'monitoring', type: 'Normal', reason: 'Started', object: 'Pod/' + pods.find((p) => p.namespace === 'monitoring').name, message: 'Started container grafana', count: 1, last: ago(60) },
+];
+
+const byNs = (arr, ns) => (ns === '_all' ? arr : arr.filter((x) => x.namespace === ns));
+
+const logText = (pod) => {
+  if (pod.status === 'CrashLoopBackOff') {
+    return [
+      '2026-11-20T05:01:12.331Z INFO  Starting cards-service v3.0.0-rc1',
+      '2026-11-20T05:01:12.902Z INFO  Loading config from /etc/config/application.yml',
+      '2026-11-20T05:01:13.118Z WARN  DB_POOL_SIZE not set, using default 10',
+      '2026-11-20T05:01:14.507Z ERROR Failed to connect to postgres://cards-db:5432 - connection refused',
+      '2026-11-20T05:01:14.508Z ERROR Application startup failed',
+      'Exception in thread "main" java.net.ConnectException: Connection refused',
+      '    at org.postgresql.core.v3.ConnectionFactoryImpl.openConnectionImpl(ConnectionFactoryImpl.java:319)',
+    ].join('\n');
+  }
+  const lines = [];
+  for (let i = 40; i > 0; i--) {
+    const t = new Date(now - i * 4000).toISOString();
+    const path = ['/api/v1/accounts', '/api/v1/cards', '/health', '/api/v1/transfers', '/api/v1/profile'][i % 5];
+    lines.push(`${t} INFO  ${['GET', 'POST'][i % 2]} ${path} ${i % 11 === 0 ? 500 : 200} ${(i * 7) % 90 + 3}ms`);
+  }
+  return lines.join('\n');
+};
+
+export function demo(app) {
+  let currentContext = 'dev-cluster-mobile-dev';
+  const contexts = [
+    { name: 'dev-cluster-mobile-dev', cluster: 'dev-cluster', user: 'mobile-dev-user', namespace: 'mobile-dev' },
+    { name: 'dev-cluster-admin', cluster: 'dev-cluster', user: 'admin', namespace: 'default' },
+  ];
+
+  app.get('/api/info', (req, res) => res.json({
+    demo: true,
+    kubeconfig: '(demo)',
+    currentContext,
+    contexts,
+    server: 'https://10.0.0.10:6443',
+    defaultNamespace: contexts.find((c) => c.name === currentContext)?.namespace || 'default',
+    version: 'v1.30.4',
+  }));
+  app.post('/api/context', (req, res) => { currentContext = req.body.name; res.json({ ok: true, currentContext }); });
+  app.get('/api/namespaces', (req, res) => res.json(namespaces.map((name) => ({ name, status: 'Active' }))));
+  app.get('/api/nodes', (req, res) => res.json(nodes.map((name, i) => ({
+    name, status: 'Ready', roles: i === 0 ? 'control-plane' : 'worker', version: 'v1.30.4', cpu: i === 0 ? '4' : '8', memory: i === 0 ? '8Gi' : '32Gi', created: ago(60 * 24 * 120),
+  }))));
+  app.get('/api/:ns/pods', (req, res) => res.json(byNs(pods, req.params.ns)));
+  app.get('/api/:ns/deployments', (req, res) => res.json(byNs(deployments, req.params.ns)));
+  app.get('/api/:ns/services', (req, res) => res.json(byNs(services, req.params.ns)));
+  app.get('/api/:ns/ingresses', (req, res) => res.json(byNs(ingresses, req.params.ns)));
+  app.get('/api/:ns/events', (req, res) => res.json(byNs(events, req.params.ns)));
+  app.get('/api/:ns/pods/:name/logs', (req, res) => {
+    const p = pods.find((x) => x.name === req.params.name);
+    if (!p) return res.json({ text: '' });
+    const ts = req.query.timestamps === '1';
+    // a few fresh lines each call so refresh visibly brings new logs
+    const extra = p.status === 'Running' ? Array.from({ length: 3 }, (_, i) => `${new Date(Date.now() - (2 - i) * 1000).toISOString()} INFO  GET /api/v1/health 200 ${3 + i}ms`) : [];
+    const lines = [...logText(p).split('\n'), ...extra].slice(-Number(req.query.tail || 500));
+    res.json({ text: lines.map((l) => (ts ? l : l.replace(/^\S+ /, ''))).join('\n') });
+  });
+  const yaml = (kind, o) => `apiVersion: ${kind === 'Pod' ? 'v1' : 'apps/v1'}\nkind: ${kind}\nmetadata:\n  name: ${o.name}\n  namespace: ${o.namespace}\nspec:\n  containers:\n${o.images.map((im) => `    - image: ${im}`).join('\n')}\n`;
+  app.get('/api/:ns/pods/:name/yaml', (req, res) => res.json({ text: yaml('Pod', pods.find((x) => x.name === req.params.name) || { name: '?', namespace: '?', images: [] }) }));
+  app.get('/api/:ns/deployments/:name/yaml', (req, res) => res.json({ text: yaml('Deployment', deployments.find((x) => x.name === req.params.name) || { name: '?', namespace: '?', images: [] }) }));
+  app.delete('/api/:ns/pods/:name', (req, res) => {
+    pods = pods.map((p) => (p.name === req.params.name ? { ...p, status: 'Terminating' } : p));
+    res.json({ ok: true });
+  });
+  app.post('/api/:ns/pods/:name/restart', (req, res) => {
+    const p = pods.find((x) => x.name === req.params.name && x.namespace === req.params.ns);
+    if (!p) return res.status(404).json({ error: 'pod not found' });
+    const suffix = Math.random().toString(36).slice(2, 7);
+    pods = pods.map((x) => (x === p ? { ...p, name: p.name.replace(/-[^-]+$/, '-' + suffix), status: 'ContainerCreating', ready: '0/1', restarts: 0, created: new Date().toISOString() } : x));
+    res.json({ ok: true });
+  });
+  app.post('/api/:ns/deployments/:name/scale', (req, res) => {
+    const d = deployments.find((x) => x.name === req.params.name && x.namespace === req.params.ns);
+    if (d) { d.replicas = Number(req.body.replicas); d.ready = Math.min(d.ready, d.replicas); }
+    res.json({ ok: true });
+  });
+  app.post('/api/:ns/deployments/:name/restart', (req, res) => {
+    const t = new Date().toISOString();
+    pods = pods.map((p) => (p.namespace === req.params.ns && p.name.startsWith(req.params.name + '-') ? { ...p, created: t, restarts: 0 } : p));
+    res.json({ ok: true });
+  });
+}

@@ -1,0 +1,29 @@
+{
+  "name": "anchor-k8s",
+  "appId": "uz.az.anchor.k8s",
+  "displayName": "Anchor K8s",
+  "version": "1.0.0",
+  "description": "Anchor K8s — lightweight Kubernetes web dashboard over kubeconfig (uz / ru / en)",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "keywords": [
+    "anchor",
+    "kubernetes",
+    "k8s",
+    "dashboard",
+    "kubeconfig",
+    "argocd"
+  ],
+  "scripts": {
+    "start": "node server.js",
+    "demo": "DEMO=1 PORT=8090 node server.js"
+  },
+  "dependencies": {
+    "@kubernetes/client-node": "^1.4.0",
+    "express": "^5.1.0"
+  }
+}

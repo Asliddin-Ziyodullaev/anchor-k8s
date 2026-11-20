@@ -1,0 +1,816 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Anchor K8s</title>
+<meta name="application-name" content="uz.az.anchor.k8s">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<style>
+:root {
+  --bg: #f5f6f8; --panel: #ffffff; --panel-2: #f0f2f5; --border: #e2e5ea;
+  --text: #1b1f24; --muted: #66707c; --accent: #2f6fed; --accent-weak: #e7efff;
+  --ok: #1f9d55; --ok-weak: #e3f6eb; --warn: #b7791f; --warn-weak: #fdf3dc;
+  --err: #d64545; --err-weak: #fde8e8; --code-bg: #0f1419; --code-text: #d6dde4;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1116; --panel: #161a21; --panel-2: #1d222b; --border: #2a303a;
+    --text: #e6e9ee; --muted: #8b95a3; --accent: #5b8ff9; --accent-weak: #1c2a47;
+    --ok: #3ccf7e; --ok-weak: #15301f; --warn: #e5b04a; --warn-weak: #33290f;
+    --err: #f06b6b; --err-weak: #3a1a1a; --code-bg: #0a0d11;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1116; --panel: #161a21; --panel-2: #1d222b; --border: #2a303a;
+  --text: #e6e9ee; --muted: #8b95a3; --accent: #5b8ff9; --accent-weak: #1c2a47;
+  --ok: #3ccf7e; --ok-weak: #15301f; --warn: #e5b04a; --warn-weak: #33290f;
+  --err: #f06b6b; --err-weak: #3a1a1a; --code-bg: #0a0d11;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--bg); color: var(--text); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+button, select, input { font: inherit; color: inherit; }
+.app { display: grid; grid-template-columns: 240px 1fr; height: 100vh; }
+
+/* sidebar */
+aside { background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; }
+.brand { display: flex; align-items: center; gap: 10px; padding: 16px; font-weight: 650; font-size: 15px; border-bottom: 1px solid var(--border); }
+.logo { width: 32px; height: 32px; flex: none; display: block; }
+.brand-text { min-width: 0; line-height: 1.15; }
+.brand-name { font-weight: 750; font-size: 16px; letter-spacing: -.01em; }
+.brand-name span, .splash-name span { color: var(--accent); font-weight: 650; }
+.brand-id { font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); font-weight: 400; margin-top: 2px; }
+.hdr-logo { display: none; width: 26px; height: 26px; }
+select.lang { width: auto; }
+
+/* splash */
+.splash { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; background: var(--bg); transition: opacity .45s ease, visibility .45s; }
+.splash.hide { opacity: 0; visibility: hidden; }
+.splash-inner { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; padding: 24px; }
+.splash-logo { position: relative; width: 96px; height: 96px; margin-bottom: 8px; }
+.splash-logo svg { width: 100%; height: 100%; border-radius: 24px; box-shadow: 0 18px 40px rgba(47,111,237,.35); animation: bob 2.4s ease-in-out infinite; transform-origin: 50% 20%; }
+.splash-logo .ripple { position: absolute; inset: -10px; border-radius: 32px; border: 2px solid var(--accent); opacity: 0; animation: ripple 2.4s ease-out infinite; }
+.splash-name { font-size: 30px; font-weight: 800; letter-spacing: -.02em; }
+.splash-tag { color: var(--muted); font-size: 14px; margin-top: -4px; }
+.splash-bar { width: 180px; height: 4px; border-radius: 2px; background: var(--panel-2); overflow: hidden; margin-top: 14px; }
+.splash-bar i { display: block; width: 40%; height: 100%; border-radius: 2px; background: linear-gradient(90deg, #2f6fed, #14b8a6); animation: slide 1.2s ease-in-out infinite; }
+.splash-status { font-size: 12px; color: var(--muted); }
+@keyframes bob { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-8px) rotate(4deg); } }
+@keyframes ripple { 0% { transform: scale(.85); opacity: .55; } 100% { transform: scale(1.25); opacity: 0; } }
+@keyframes slide { 0% { transform: translateX(-110%); } 100% { transform: translateX(260%); } }
+@media (prefers-reduced-motion: reduce) { .splash-logo svg, .splash-logo .ripple, .splash-bar i { animation: none; } }
+.field { padding: 12px 16px 4px; }
+.field label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 4px; }
+select, input[type=search], input[type=number] { width: 100%; background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 7px 9px; outline: none; }
+select:focus, input:focus { border-color: var(--accent); }
+nav { padding: 12px 8px; display: flex; flex-direction: column; gap: 2px; overflow: auto; }
+nav button { display: flex; justify-content: space-between; align-items: center; text-align: left; background: none; border: 0; padding: 8px 10px; border-radius: 8px; cursor: pointer; color: var(--muted); }
+nav button:hover { background: var(--panel-2); color: var(--text); }
+nav button.active { background: var(--accent-weak); color: var(--accent); font-weight: 600; }
+nav .count { font-size: 12px; opacity: .8; font-variant-numeric: tabular-nums; }
+.side-foot { margin-top: auto; padding: 12px 16px; border-top: 1px solid var(--border); font-size: 12px; color: var(--muted); word-break: break-all; }
+.side-foot b { color: var(--text); font-weight: 600; }
+
+/* main */
+main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+header { display: flex; align-items: center; gap: 12px; padding: 12px 20px; border-bottom: 1px solid var(--border); background: var(--panel); flex-wrap: wrap; }
+header h1 { font-size: 17px; margin: 0; font-weight: 650; }
+header .sp { flex: 1; }
+header input[type=search] { width: 240px; }
+.btn { background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 11px; cursor: pointer; white-space: nowrap; }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.danger:hover { border-color: var(--err); color: var(--err); }
+.btn.sm { padding: 3px 8px; font-size: 12px; }
+.tag { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.dot.ok { background: var(--ok); } .dot.err { background: var(--err); }
+.demo-banner { background: var(--warn-weak); color: var(--warn); padding: 6px 20px; font-size: 13px; border-bottom: 1px solid var(--border); }
+.content { padding: 20px; overflow: auto; flex: 1; }
+
+/* cards */
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; cursor: pointer; }
+.card:hover { border-color: var(--accent); }
+.card .k { color: var(--muted); font-size: 12px; }
+.card .v { font-size: 26px; font-weight: 650; font-variant-numeric: tabular-nums; margin-top: 2px; }
+.card .s { font-size: 12px; margin-top: 4px; display: flex; gap: 10px; flex-wrap: wrap; }
+.bar { height: 6px; background: var(--panel-2); border-radius: 3px; overflow: hidden; margin-top: 8px; display: flex; }
+.bar i { display: block; height: 100%; }
+h2 { font-size: 14px; margin: 0 0 10px; font-weight: 650; }
+.grid2 { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
+.grid2 > div { min-width: 0; }
+
+/* table */
+.tbl-wrap { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; overflow: auto; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+th { font-size: 12px; color: var(--muted); font-weight: 600; background: var(--panel); position: sticky; top: 0; cursor: pointer; user-select: none; }
+th:hover { color: var(--text); }
+tr:last-child td { border-bottom: 0; }
+tbody tr:hover td { background: var(--panel-2); }
+td.num { font-variant-numeric: tabular-nums; }
+td.wrap { white-space: normal; min-width: 280px; }
+td.mono, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; }
+td .muted, .muted { color: var(--muted); }
+.actions { display: flex; gap: 6px; }
+.pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; background: var(--panel-2); color: var(--muted); }
+.pill.ok { background: var(--ok-weak); color: var(--ok); }
+.pill.warn { background: var(--warn-weak); color: var(--warn); }
+.pill.err { background: var(--err-weak); color: var(--err); }
+.pill.argo { background: #fbe9e1; color: #c2410c; font-size: 11px; padding: 0 6px; vertical-align: 1px; }
+:root[data-theme="dark"] .pill.argo { background: #3a2016; color: #fb923c; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .pill.argo { background: #3a2016; color: #fb923c; } }
+.empty { padding: 40px; text-align: center; color: var(--muted); }
+.error-box { background: var(--err-weak); color: var(--err); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; white-space: pre-wrap; }
+
+/* drawer */
+.drawer-bg { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: none; z-index: 10; }
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(900px, 100vw); background: var(--panel); border-left: 1px solid var(--border); z-index: 11; display: none; flex-direction: column; }
+.drawer.open, .drawer-bg.open { display: flex; }
+.drawer-head { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.drawer-head h3 { margin: 0; font-size: 15px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.drawer-head select { width: auto; }
+.drawer.full { width: 100vw; }
+.drawer-tools { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-bottom: 1px solid var(--border); flex-wrap: wrap; font-size: 13px; }
+.drawer-tools select { width: auto; padding: 4px 8px; }
+.drawer-tools input[type=search] { width: 200px; padding: 4px 9px; flex: 1; min-width: 140px; }
+.drawer-tools label { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); cursor: pointer; user-select: none; }
+.drawer-tools label:has(input:checked) { color: var(--text); }
+.code-wrap { flex: 1; position: relative; min-height: 0; display: flex; }
+.code { flex: 1; overflow: auto; background: var(--code-bg); color: var(--code-text); padding: 12px 16px; font: 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre-wrap; word-break: break-all; }
+.code.nowrap, .code.nowrap > div { white-space: pre; word-break: normal; }
+.code > div { white-space: pre-wrap; min-height: 1.5em; }
+.code > div:hover { background: rgba(255,255,255,.04); }
+.code .e { color: #ff8a8a; } .code .w { color: #f2c46d; } .code .note { color: #7c8a99; font-style: italic; }
+.code mark { background: #f2c46d; color: #111; border-radius: 2px; }
+.jump { position: absolute; right: 22px; bottom: 16px; display: none; box-shadow: 0 4px 14px rgba(0,0,0,.35); }
+.jump.show { display: inline-block; }
+.live { display: none; align-items: center; gap: 6px; font-size: 12px; color: var(--ok); font-weight: 600; }
+.live.on { display: inline-flex; }
+.live .dot { background: var(--ok); animation: pulse 1.4s infinite; }
+@keyframes pulse { 50% { opacity: .25; } }
+.log-stat { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.podlink { cursor: pointer; } .podlink:hover { color: var(--accent); text-decoration: underline; }
+
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 9px 16px; border-radius: 8px; z-index: 20; display: none; }
+.menu-btn { display: none; }
+
+@media (max-width: 860px) {
+  .app { grid-template-columns: 1fr; }
+  aside { position: fixed; inset: 0 auto 0 0; width: 260px; z-index: 12; transform: translateX(-100%); transition: transform .2s; }
+  aside.open { transform: none; box-shadow: 0 0 40px rgba(0,0,0,.3); }
+  .menu-btn { display: inline-block; }
+  .hdr-logo { display: block; }
+  header { padding: 10px 16px; }
+  header input[type=search] { width: 100%; order: 10; }
+  .content { padding: 16px; }
+  .grid2 { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<!-- logo sprite (not display:none, so gradients keep working) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="anchorGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2f6fed"/><stop offset="1" stop-color="#14b8a6"/>
+    </linearGradient>
+    <symbol id="anchorLogo" viewBox="0 0 48 48">
+      <rect width="48" height="48" rx="12" fill="url(#anchorGrad)"/>
+      <g fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="24" cy="11.5" r="4"/><path d="M24 15.5V40"/><path d="M17 21h14"/>
+        <path d="M11 27a13 13 0 0 0 26 0"/><path d="M8 30l3-3 3 3"/><path d="M34 30l3-3 3 3"/>
+      </g>
+    </symbol>
+  </defs>
+</svg>
+
+<!-- splash -->
+<div class="splash" id="splash">
+  <div class="splash-inner">
+    <div class="splash-logo"><svg viewBox="0 0 48 48"><use href="#anchorLogo"/></svg><span class="ripple"></span></div>
+    <div class="splash-name">Anchor <span>K8s</span></div>
+    <div class="splash-tag" data-i18n="app.tagline"></div>
+    <div class="splash-bar"><i></i></div>
+    <div class="splash-status" id="splashStatus" data-i18n="splash.loading"></div>
+  </div>
+</div>
+
+<div class="app">
+  <aside id="side">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 48 48"><use href="#anchorLogo"/></svg>
+      <div class="brand-text"><div class="brand-name">Anchor <span>K8s</span></div><div class="brand-id">uz.az.anchor</div></div>
+    </div>
+    <div class="field"><label>Context</label><select id="ctx"></select></div>
+    <div class="field"><label>Namespace</label><select id="ns"></select></div>
+    <nav id="nav"></nav>
+    <div class="side-foot" id="foot"></div>
+  </aside>
+  <main>
+    <header>
+      <button class="btn menu-btn" id="menu">☰</button>
+      <svg class="logo hdr-logo" viewBox="0 0 48 48"><use href="#anchorLogo"/></svg>
+      <h1 id="title"></h1>
+      <span class="tag"><span class="dot" id="conn"></span><span id="connText" data-i18n="conn.connecting"></span></span>
+      <div class="sp"></div>
+      <input type="search" id="q" data-i18n-ph="search">
+      <select id="auto" style="width:auto" data-i18n-title="auto.title">
+        <option value="0" data-i18n="auto.off"></option>
+        <option value="5">5 s</option>
+        <option value="10" selected>10 s</option>
+        <option value="30">30 s</option>
+      </select>
+      <button class="btn" id="refresh" data-i18n="refresh"></button>
+      <select id="lang" class="lang" data-i18n-title="lang.title">
+        <option value="uz">O'zbek</option><option value="ru">Русский</option><option value="en">English</option>
+      </select>
+      <button class="btn" id="theme" data-i18n-title="theme"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor"/></svg></button>
+    </header>
+    <div class="demo-banner" id="demoBanner" hidden><span data-i18n="demo.banner"></span> <span class="mono">node server.js /path/to/kubeconfig.yaml</span></div>
+    <div class="content" id="content"></div>
+  </main>
+</div>
+
+<div class="drawer-bg" id="drawerBg"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-head">
+    <h3 id="dTitle"></h3>
+    <span class="live" id="dLive" data-i18n-title="log.autoTitle"><span class="dot"></span><span data-i18n="log.auto"></span></span>
+    <span class="log-stat" id="dStat"></span>
+    <button class="btn sm" id="dReload" data-i18n-title="log.reload">↻</button>
+    <button class="btn sm" id="dCopy" data-i18n="copy"></button>
+    <button class="btn sm" id="dDownload" data-i18n="download" hidden></button>
+    <button class="btn sm" id="dFull" data-i18n-title="full">⤢</button>
+    <button class="btn sm" id="dClose" data-i18n-title="close">✕</button>
+  </div>
+  <div class="drawer-tools" id="dTools" hidden>
+    <select id="dContainer" title="Container"></select>
+    <select id="dTail" data-i18n-title="log.tailTitle"></select>
+    <select id="dAuto" data-i18n-title="log.autoSel"></select>
+    <label title="--timestamps"><input type="checkbox" id="dTs"> <span data-i18n="log.ts"></span></label>
+    <label data-i18n-title="log.prevTitle"><input type="checkbox" id="dPrev"> <span data-i18n="log.prev"></span></label>
+    <label><input type="checkbox" id="dWrap" checked> <span data-i18n="log.wrap"></span></label>
+    <label data-i18n-title="log.onlyTitle"><input type="checkbox" id="dOnly" checked> <span data-i18n="log.only"></span></label>
+    <input type="search" id="dFilter" data-i18n-ph="log.filter">
+  </div>
+  <div class="code-wrap">
+    <div class="code" id="dBody"></div>
+    <button class="btn sm primary jump" id="dJump" data-i18n="log.jump"></button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const APP_ID = 'uz.az.anchor.k8s';
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+// per-browser settings, namespaced by app id
+const store = {
+  get(k) { try { return localStorage.getItem(`${APP_ID}:${k}`); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(`${APP_ID}:${k}`, v); } catch {} },
+};
+
+// ---------- i18n ----------
+const I18N = {
+  uz: {
+    'app.tagline': 'Kubernetes boshqaruv paneli',
+    'splash.loading': 'Klasterga ulanmoqda…',
+    'view.overview': "Umumiy ko'rinish",
+    'conn.connecting': 'ulanmoqda…', 'conn.ok': 'ulangan · {t}', 'conn.err': 'ulanish xatosi',
+    'search': 'Qidirish…', 'auto.title': 'Avto-yangilash', 'auto.off': "Avto: o'chiq",
+    'refresh': '↻ Yangilash', 'theme': "Mavzu (yorug'/qorong'i)", 'lang.title': 'Til',
+    'demo.banner': "DEMO rejim: soxta ma'lumotlar ko'rsatilmoqda. Haqiqiy klaster uchun:",
+    'ns.all': "Barcha namespace'lar",
+    'foot.server': 'Server', 'foot.version': 'Versiya', 'foot.file': 'Fayl', 'unknown': "noma'lum",
+    'col.name': 'Nomi', 'col.status': 'Holat', 'col.restarts': 'Restart', 'col.age': 'Yoshi', 'col.type': 'Turi',
+    'col.ports': 'Portlar', 'col.hosts': 'Hostlar', 'col.address': 'Manzil', 'col.reason': 'Sabab', 'col.object': 'Obyekt',
+    'col.message': 'Xabar', 'col.count': 'Soni', 'col.last': 'Oxirgi', 'col.roles': 'Rol', 'col.version': 'Versiya', 'col.memory': 'Xotira',
+    'btn.logs': 'Loglar', 'btn.delete': "O'chirish", 'btn.restart': '↻ Restart', 'btn.scale': 'Scale',
+    'title.openLogs': 'Loglarni ochish', 'title.restartPod': 'Podni qayta yaratish ({o})', 'title.argo': 'Argo CD boshqaradi: {a}',
+    'empty.rbac': "Ruxsat yo'q: kubeconfig foydalanuvchisi bu resursni ko'ra olmaydi (RBAC)", 'empty.none': 'Hech narsa topilmadi',
+    'ov.running': '{n} ishlayapti', 'ov.failed': '{n} xato', 'ov.dep': '{ok} tayyor · {bad} muammoli', 'ov.warnings': 'Ogohlantirishlar',
+    'ov.badPods': 'Muammoli podlar', 'ov.allGood': 'Hammasi joyida ✓', 'ov.recentWarn': "So'nggi ogohlantirishlar",
+    'err.server': "Serverga ulanib bo'lmadi: {m}", 'err': 'Xato: {m}',
+    'err.no_controller': "Bu podning controller'i yo'q: o'chirilsa qayta yaratilmaydi", 'err.bad_replicas': "Replicas soni noto'g'ri",
+    'log.title': 'Loglar', 'log.auto': 'AVTO', 'log.autoTitle': 'Loglar avtomatik yangilanmoqda', 'log.reload': 'Qayta yuklash',
+    'copy': 'Nusxa', 'download': 'Yuklab olish', 'full': "To'liq ekran", 'close': 'Yopish (Esc)',
+    'log.tailTitle': 'Oxirgi nechta qator', 'log.tailOpt': 'oxirgi {n}', 'log.autoSel': 'Loglarni avtomatik yangilash', 'log.every': 'har {n} s',
+    'log.ts': 'Vaqt', 'log.prev': 'Oldingi', 'log.prevTitle': '--previous: oldingi (qulagan) container loglari', 'log.wrap': 'Wrap',
+    'log.only': 'Filtr', 'log.onlyTitle': "Faqat mos qatorlarni ko'rsatish", 'log.filter': 'Logdan qidirish…  (Ctrl+F)', 'log.jump': '↓ Oxiriga',
+    'log.lines': '{n} qator', 'log.matches': '{n} mos', 'log.noMatch': "Mos qator yo'q", 'log.empty': "(log bo'sh)", 'loading': 'Yuklanmoqda…',
+    'toast.copied': 'Nusxa olindi', 'toast.deleted': "Pod o'chirildi", 'toast.restartedPod': 'Pod restart qilindi', 'toast.restarting': 'Restart boshlandi',
+    'confirm.delpod': "\"{name}\" podini o'chirasizmi?\n(Deployment bo'lsa, yangisi avtomatik yaratiladi)",
+    'confirm.restartpod': "\"{name}\" podini restart qilasizmi?\n(Pod o'chiriladi, controller yangisini yaratadi)",
+    'confirm.restart': '"{name}" deploymentni restart qilasizmi?',
+    'prompt.scale': '"{name}" uchun replicas soni:',
+    'prompt.argo': "⚠ Argo CD boshqaradi (app: {a}). replicas git'da yozilgan:\nselfHeal yoqilgan bo'lsa, Argo CD buni darhol eski holiga qaytaradi,\naks holda app OutOfSync bo'lib qoladi. Doimiy o'zgarish uchun git'dagi values'ni o'zgartiring.",
+  },
+  ru: {
+    'app.tagline': 'Панель управления Kubernetes',
+    'splash.loading': 'Подключение к кластеру…',
+    'view.overview': 'Обзор',
+    'conn.connecting': 'подключение…', 'conn.ok': 'подключено · {t}', 'conn.err': 'ошибка подключения',
+    'search': 'Поиск…', 'auto.title': 'Автообновление', 'auto.off': 'Авто: выкл',
+    'refresh': '↻ Обновить', 'theme': 'Тема (светлая/тёмная)', 'lang.title': 'Язык',
+    'demo.banner': 'ДЕМО-режим: показаны тестовые данные. Для реального кластера:',
+    'ns.all': 'Все namespace',
+    'foot.server': 'Сервер', 'foot.version': 'Версия', 'foot.file': 'Файл', 'unknown': 'неизвестно',
+    'col.name': 'Имя', 'col.status': 'Статус', 'col.restarts': 'Рестарты', 'col.age': 'Возраст', 'col.type': 'Тип',
+    'col.ports': 'Порты', 'col.hosts': 'Хосты', 'col.address': 'Адрес', 'col.reason': 'Причина', 'col.object': 'Объект',
+    'col.message': 'Сообщение', 'col.count': 'Кол-во', 'col.last': 'Последнее', 'col.roles': 'Роли', 'col.version': 'Версия', 'col.memory': 'Память',
+    'btn.logs': 'Логи', 'btn.delete': 'Удалить', 'btn.restart': '↻ Перезапуск', 'btn.scale': 'Масштаб',
+    'title.openLogs': 'Открыть логи', 'title.restartPod': 'Пересоздать под ({o})', 'title.argo': 'Управляется Argo CD: {a}',
+    'empty.rbac': 'Нет доступа: пользователь kubeconfig не может просматривать этот ресурс (RBAC)', 'empty.none': 'Ничего не найдено',
+    'ov.running': '{n} работают', 'ov.failed': '{n} с ошибкой', 'ov.dep': '{ok} готовы · {bad} с проблемами', 'ov.warnings': 'Предупреждения',
+    'ov.badPods': 'Проблемные поды', 'ov.allGood': 'Всё в порядке ✓', 'ov.recentWarn': 'Последние предупреждения',
+    'err.server': 'Не удалось подключиться к серверу: {m}', 'err': 'Ошибка: {m}',
+    'err.no_controller': 'У пода нет контроллера: после удаления он не будет пересоздан', 'err.bad_replicas': 'Неверное количество реплик',
+    'log.title': 'Логи', 'log.auto': 'АВТО', 'log.autoTitle': 'Логи обновляются автоматически', 'log.reload': 'Перезагрузить',
+    'copy': 'Копировать', 'download': 'Скачать', 'full': 'Во весь экран', 'close': 'Закрыть (Esc)',
+    'log.tailTitle': 'Сколько последних строк', 'log.tailOpt': 'последние {n}', 'log.autoSel': 'Автообновление логов', 'log.every': 'каждые {n} с',
+    'log.ts': 'Время', 'log.prev': 'Предыдущий', 'log.prevTitle': '--previous: логи предыдущего (упавшего) контейнера', 'log.wrap': 'Перенос',
+    'log.only': 'Фильтр', 'log.onlyTitle': 'Показывать только совпадения', 'log.filter': 'Поиск в логах…  (Ctrl+F)', 'log.jump': '↓ В конец',
+    'log.lines': '{n} строк', 'log.matches': 'совпадений: {n}', 'log.noMatch': 'Нет совпадений', 'log.empty': '(лог пуст)', 'loading': 'Загрузка…',
+    'toast.copied': 'Скопировано', 'toast.deleted': 'Под удалён', 'toast.restartedPod': 'Под перезапущен', 'toast.restarting': 'Перезапуск начат',
+    'confirm.delpod': 'Удалить под "{name}"?\n(Если он из Deployment, новый создастся автоматически)',
+    'confirm.restartpod': 'Перезапустить под "{name}"?\n(Под будет удалён, контроллер создаст новый)',
+    'confirm.restart': 'Перезапустить deployment "{name}"?',
+    'prompt.scale': 'Количество реплик для "{name}":',
+    'prompt.argo': '⚠ Управляется Argo CD (app: {a}). replicas задано в git:\nесли включён selfHeal, Argo CD сразу вернёт прежнее значение,\nиначе приложение станет OutOfSync. Для постоянного изменения правьте values в git.',
+  },
+  en: {
+    'app.tagline': 'Kubernetes control panel',
+    'splash.loading': 'Connecting to cluster…',
+    'view.overview': 'Overview',
+    'conn.connecting': 'connecting…', 'conn.ok': 'connected · {t}', 'conn.err': 'connection error',
+    'search': 'Search…', 'auto.title': 'Auto-refresh', 'auto.off': 'Auto: off',
+    'refresh': '↻ Refresh', 'theme': 'Theme (light/dark)', 'lang.title': 'Language',
+    'demo.banner': 'DEMO mode: showing fake data. For a real cluster:',
+    'ns.all': 'All namespaces',
+    'foot.server': 'Server', 'foot.version': 'Version', 'foot.file': 'File', 'unknown': 'unknown',
+    'col.name': 'Name', 'col.status': 'Status', 'col.restarts': 'Restarts', 'col.age': 'Age', 'col.type': 'Type',
+    'col.ports': 'Ports', 'col.hosts': 'Hosts', 'col.address': 'Address', 'col.reason': 'Reason', 'col.object': 'Object',
+    'col.message': 'Message', 'col.count': 'Count', 'col.last': 'Last seen', 'col.roles': 'Roles', 'col.version': 'Version', 'col.memory': 'Memory',
+    'btn.logs': 'Logs', 'btn.delete': 'Delete', 'btn.restart': '↻ Restart', 'btn.scale': 'Scale',
+    'title.openLogs': 'Open logs', 'title.restartPod': 'Recreate pod ({o})', 'title.argo': 'Managed by Argo CD: {a}',
+    'empty.rbac': "Access denied: the kubeconfig user can't view this resource (RBAC)", 'empty.none': 'Nothing found',
+    'ov.running': '{n} running', 'ov.failed': '{n} failing', 'ov.dep': '{ok} ready · {bad} unhealthy', 'ov.warnings': 'Warnings',
+    'ov.badPods': 'Unhealthy pods', 'ov.allGood': 'All good ✓', 'ov.recentWarn': 'Recent warnings',
+    'err.server': "Can't reach the server: {m}", 'err': 'Error: {m}',
+    'err.no_controller': 'This pod has no controller: it will not be recreated if deleted', 'err.bad_replicas': 'Invalid replica count',
+    'log.title': 'Logs', 'log.auto': 'AUTO', 'log.autoTitle': 'Logs refresh automatically', 'log.reload': 'Reload',
+    'copy': 'Copy', 'download': 'Download', 'full': 'Fullscreen', 'close': 'Close (Esc)',
+    'log.tailTitle': 'Number of last lines', 'log.tailOpt': 'last {n}', 'log.autoSel': 'Auto-refresh logs', 'log.every': 'every {n}s',
+    'log.ts': 'Time', 'log.prev': 'Previous', 'log.prevTitle': '--previous: logs of the previous (crashed) container', 'log.wrap': 'Wrap',
+    'log.only': 'Filter', 'log.onlyTitle': 'Show matching lines only', 'log.filter': 'Search logs…  (Ctrl+F)', 'log.jump': '↓ To bottom',
+    'log.lines': '{n} lines', 'log.matches': '{n} matches', 'log.noMatch': 'No matching lines', 'log.empty': '(log is empty)', 'loading': 'Loading…',
+    'toast.copied': 'Copied', 'toast.deleted': 'Pod deleted', 'toast.restartedPod': 'Pod restarted', 'toast.restarting': 'Restart started',
+    'confirm.delpod': 'Delete pod "{name}"?\n(If it belongs to a Deployment, a new one is created automatically)',
+    'confirm.restartpod': 'Restart pod "{name}"?\n(The pod is deleted and its controller creates a new one)',
+    'confirm.restart': 'Restart deployment "{name}"?',
+    'prompt.scale': 'Replicas for "{name}":',
+    'prompt.argo': '⚠ Managed by Argo CD (app: {a}). replicas is set in git:\nwith selfHeal on, Argo CD reverts it right away,\notherwise the app goes OutOfSync. To change it permanently, edit the values in git.',
+  },
+};
+const LANGS = Object.keys(I18N);
+function detectLang() {
+  const saved = store.get('lang');
+  if (LANGS.includes(saved)) return saved;
+  // Uzbek by default; Russian-language browsers start in Russian
+  return (navigator.language || '').toLowerCase().startsWith('ru') ? 'ru' : 'uz';
+}
+let LANG = detectLang();
+function t(key, vars = {}) {
+  const s = I18N[LANG][key] ?? I18N.en[key] ?? key;
+  return s.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m));
+}
+function applyI18n() {
+  document.documentElement.lang = LANG;
+  document.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-title]').forEach((el) => { el.title = t(el.dataset.i18nTitle); });
+  document.querySelectorAll('[data-i18n-ph]').forEach((el) => { el.placeholder = t(el.dataset.i18nPh); });
+  const tail = $('#dTail').value || '500', auto = $('#dAuto').value || store.get('logAuto') || '5';
+  $('#dTail').innerHTML = [100, 300, 500, 1000, 5000, 20000].map((n) => `<option value="${n}">${t('log.tailOpt', { n })}</option>`).join('');
+  $('#dAuto').innerHTML = `<option value="0">${t('auto.off')}</option>` + [2, 5, 10].map((n) => `<option value="${n}">${t('log.every', { n })}</option>`).join('');
+  $('#dTail').value = tail; $('#dAuto').value = auto;
+  $('#lang').value = LANG;
+}
+
+const VIEWS = ['overview', 'pods', 'deployments', 'services', 'ingresses', 'events', 'nodes'];
+const viewTitle = (v) => (v === 'overview' ? t('view.overview') : v[0].toUpperCase() + v.slice(1));
+
+const S = { view: 'overview', ns: null, info: null, data: {}, q: '', sort: {}, timer: null };
+S.view = store.get('view') || 'overview';
+if (!VIEWS.includes(S.view)) S.view = 'overview';
+
+// ---------- api ----------
+async function api(path, opts = {}) {
+  const r = await fetch('/api' + path, { headers: { 'Content-Type': 'application/json' }, ...opts, body: opts.body ? JSON.stringify(opts.body) : undefined });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.key ? t('err.' + j.key) : j.error || r.statusText);
+  return j;
+}
+function toast(msg) {
+  const el = $('#toast'); el.textContent = msg; el.style.display = 'block';
+  clearTimeout(toast.t); toast.t = setTimeout(() => (el.style.display = 'none'), 2600);
+}
+
+// ---------- formatting ----------
+function ago(iso) {
+  if (!iso) return '-';
+  const s = Math.max(0, (Date.now() - new Date(iso)) / 1000);
+  if (s < 60) return Math.floor(s) + 's';
+  if (s < 3600) return Math.floor(s / 60) + 'm';
+  if (s < 86400) return Math.floor(s / 3600) + 'h';
+  return Math.floor(s / 86400) + 'd';
+}
+function statusPill(st) {
+  const ok = ['Running', 'Succeeded', 'Completed', 'Ready', 'Active', 'Normal'];
+  const warn = ['Pending', 'ContainerCreating', 'Terminating', 'PodInitializing', 'Init:0/1'];
+  const cls = ok.includes(st) ? 'ok' : warn.includes(st) ? 'warn' : 'err';
+  return `<span class="pill ${cls}">${esc(st)}</span>`;
+}
+const podHealth = (p) => (['Running', 'Succeeded', 'Completed'].includes(p.status) ? 'ok' : ['Pending', 'ContainerCreating', 'Terminating', 'PodInitializing'].includes(p.status) ? 'warn' : 'err');
+const attrs = (o) => `data-ns="${esc(o.namespace)}" data-name="${esc(o.name)}"`;
+
+// ---------- table ----------
+// [key, header (i18n key or literal), formatter, hideUnlessAllNs, tdClass]
+const COLS = {
+  pods: [
+    ['name', 'col.name', (p) => `<span class="mono podlink" data-act="logs" ${attrs(p)} title="${esc(t('title.openLogs'))}">${esc(p.name)}</span>`],
+    ['namespace', 'Namespace', null, true],
+    ['status', 'col.status', (p) => statusPill(p.status)],
+    ['ready', 'Ready', null], ['restarts', 'col.restarts', (p) => `<span class="${p.restarts > 5 ? 'pill err' : ''}">${p.restarts}</span>`],
+    ['node', 'Node', (p) => `<span class="muted">${esc(p.node)}</span>`], ['ip', 'IP', (p) => `<span class="mono muted">${esc(p.ip)}</span>`],
+    ['created', 'col.age', (p) => ago(p.created)],
+    ['_a', '', (p) => `<div class="actions">
+      <button class="btn sm" data-act="logs" ${attrs(p)}>${t('btn.logs')}</button>
+      <button class="btn sm" data-act="podyaml" ${attrs(p)}>YAML</button>
+      ${p.owner ? `<button class="btn sm" data-act="restartpod" ${attrs(p)} title="${esc(t('title.restartPod', { o: p.owner }))}">${t('btn.restart')}</button>` : ''}
+      <button class="btn sm danger" data-act="delpod" ${attrs(p)}>${t('btn.delete')}</button></div>`],
+  ],
+  deployments: [
+    ['name', 'col.name', (d) => `<b>${esc(d.name)}</b>${d.argocd ? ` <span class="pill argo" title="${esc(t('title.argo', { a: d.argocd }))}">Argo</span>` : ''}`], ['namespace', 'Namespace', null, true],
+    ['ready', 'Ready', (d) => `<span class="pill ${d.ready === d.replicas ? 'ok' : d.ready === 0 && d.replicas > 0 ? 'err' : 'warn'}">${d.ready}/${d.replicas}</span>`],
+    ['updated', 'Up-to-date', null], ['available', 'Available', null],
+    ['images', 'Image', (d) => `<span class="mono muted">${esc(d.images.join(', '))}</span>`],
+    ['created', 'col.age', (d) => ago(d.created)],
+    ['_a', '', (d) => `<div class="actions">
+      <button class="btn sm" data-act="scale" ${attrs(d)} data-r="${d.replicas}" data-argo="${esc(d.argocd || '')}">${t('btn.scale')}</button>
+      <button class="btn sm" data-act="restart" ${attrs(d)}>${t('btn.restart')}</button>
+      <button class="btn sm" data-act="depyaml" ${attrs(d)}>YAML</button></div>`],
+  ],
+  services: [
+    ['name', 'col.name', (s) => `<b>${esc(s.name)}</b>`], ['namespace', 'Namespace', null, true],
+    ['type', 'col.type', (s) => `<span class="pill">${esc(s.type)}</span>`],
+    ['clusterIP', 'Cluster IP', (s) => `<span class="mono">${esc(s.clusterIP)}</span>`],
+    ['external', 'External', (s) => `<span class="mono">${esc(s.external)}</span>`],
+    ['ports', 'col.ports', (s) => `<span class="mono muted">${esc(s.ports)}</span>`], ['created', 'col.age', (s) => ago(s.created)],
+  ],
+  ingresses: [
+    ['name', 'col.name', (i) => `<b>${esc(i.name)}</b>`], ['namespace', 'Namespace', null, true],
+    ['className', 'Class', null], ['hosts', 'col.hosts', (i) => i.hosts.split(', ').map((h) => h === '*' ? '*' : `<a href="https://${esc(h)}" target="_blank" rel="noopener" class="mono">${esc(h)}</a>`).join(', ')],
+    ['address', 'col.address', (i) => `<span class="mono">${esc(i.address)}</span>`], ['created', 'col.age', (i) => ago(i.created)],
+  ],
+  events: [
+    ['type', 'col.type', (e) => `<span class="pill ${e.type === 'Warning' ? 'warn' : 'ok'}">${esc(e.type)}</span>`],
+    ['reason', 'col.reason', (e) => `<b>${esc(e.reason)}</b>`], ['object', 'col.object', (e) => `<span class="mono">${esc(e.object)}</span>`],
+    ['message', 'col.message', (e) => `<span class="muted">${esc(e.message)}</span>`, false, 'wrap'],
+    ['count', 'col.count', null], ['last', 'col.last', (e) => ago(e.last)],
+  ],
+  nodes: [
+    ['name', 'col.name', (n) => `<b>${esc(n.name)}</b>`], ['status', 'col.status', (n) => statusPill(n.status)],
+    ['roles', 'col.roles', null], ['version', 'col.version', (n) => `<span class="mono">${esc(n.version)}</span>`],
+    ['cpu', 'CPU', null], ['memory', 'col.memory', null], ['created', 'col.age', (n) => ago(n.created)],
+  ],
+};
+
+function filtered(kind) {
+  const q = S.q.toLowerCase();
+  let rows = (S.data[kind] || []).filter((r) => !q || JSON.stringify(r).toLowerCase().includes(q));
+  const s = S.sort[kind];
+  if (s) rows = [...rows].sort((a, b) => {
+    const x = a[s.key], y = b[s.key];
+    const r = typeof x === 'number' && typeof y === 'number' ? x - y : String(x ?? '').localeCompare(String(y ?? ''), undefined, { numeric: true });
+    return s.dir * r;
+  });
+  return rows;
+}
+
+function table(kind, rows) {
+  const cols = COLS[kind].filter((c) => !(c[3] && S.ns !== '_all'));
+  if (S.forbidden?.[kind]) return `<div class="tbl-wrap"><div class="empty">${t('empty.rbac')}</div></div>`;
+  if (!rows.length) return `<div class="tbl-wrap"><div class="empty">${t('empty.none')}</div></div>`;
+  const s = S.sort[kind];
+  return `<div class="tbl-wrap"><table><thead><tr>${cols.map(([k, l]) =>
+    `<th data-sort="${k}" data-kind="${kind}">${l ? t(l) : ''}${s?.key === k ? (s.dir > 0 ? ' ↑' : ' ↓') : ''}</th>`).join('')}</tr></thead>
+    <tbody>${rows.map((r) => `<tr>${cols.map(([k, , f, , cls]) =>
+      `<td class="${cls || ''} ${typeof r[k] === 'number' ? 'num' : ''}">${f ? f(r) : esc(r[k])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+}
+
+// ---------- overview ----------
+function overview() {
+  const pods = S.data.pods || [], deps = S.data.deployments || [], ev = S.data.events || [], nodes = S.data.nodes || [];
+  const h = { ok: 0, warn: 0, err: 0 }; pods.forEach((p) => h[podHealth(p)]++);
+  const depOk = deps.filter((d) => d.ready === d.replicas).length;
+  const warns = ev.filter((e) => e.type === 'Warning');
+  const pct = (n) => (pods.length ? (n / pods.length) * 100 : 0);
+  const bad = pods.filter((p) => podHealth(p) !== 'ok');
+  const card = (view, k, v, s, extra = '') => `<div class="card" data-go="${view}"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div>${extra}</div>`;
+  return `
+  <div class="cards">
+    ${card('pods', 'Pods', pods.length, `<span style="color:var(--ok)">● ${t('ov.running', { n: h.ok })}</span><span style="color:var(--warn)">● ${h.warn}</span><span style="color:var(--err)">● ${t('ov.failed', { n: h.err })}</span>`,
+      `<div class="bar"><i style="width:${pct(h.ok)}%;background:var(--ok)"></i><i style="width:${pct(h.warn)}%;background:var(--warn)"></i><i style="width:${pct(h.err)}%;background:var(--err)"></i></div>`)}
+    ${card('deployments', 'Deployments', deps.length, `<span class="muted">${t('ov.dep', { ok: depOk, bad: deps.length - depOk })}</span>`)}
+    ${card('services', 'Services', (S.data.services || []).length, '<span class="muted">ClusterIP / LB / NodePort</span>')}
+    ${card('events', t('ov.warnings'), warns.length, '<span class="muted">Warning events</span>')}
+    ${card('nodes', 'Nodes', S.forbidden?.nodes ? '🔒' : nodes.length, `<span class="muted">${nodes.filter((n) => n.status === 'Ready').length} Ready</span>`)}
+  </div>
+  <div class="grid2">
+    <div><h2>${t('ov.badPods')}</h2>${bad.length ? table('pods', bad) : `<div class="tbl-wrap"><div class="empty">${t('ov.allGood')}</div></div>`}</div>
+    <div><h2>${t('ov.recentWarn')}</h2>${table('events', warns.slice(0, 8))}</div>
+  </div>`;
+}
+
+// ---------- render ----------
+function renderNav() {
+  $('#nav').innerHTML = VIEWS.map((k) => {
+    const n = S.data[k];
+    return `<button data-view="${k}" class="${S.view === k ? 'active' : ''}"><span>${viewTitle(k)}</span><span class="count">${S.forbidden?.[k] ? '🔒' : n ? n.length : ''}</span></button>`;
+  }).join('');
+}
+function renderFoot() {
+  const i = S.info; if (!i) return;
+  $('#foot').innerHTML = `<div>${t('foot.server')}: <b>${esc(i.server || '-')}</b></div><div>${t('foot.version')}: <b>${esc(i.version || t('unknown'))}</b></div><div>${t('foot.file')}: ${esc(i.kubeconfig)}</div>`;
+  const all = $('#ns option[value="_all"]'); if (all) all.textContent = t('ns.all');
+}
+function renderConn() {
+  if (S.connOk === undefined) return;
+  $('#conn').className = 'dot ' + (S.connOk ? 'ok' : 'err');
+  $('#connText').textContent = S.connOk ? t('conn.ok', { t: S.connAt }) : t('conn.err');
+}
+function render() {
+  $('#title').textContent = viewTitle(S.view);
+  document.title = `${viewTitle(S.view)} · Anchor K8s`;
+  renderNav();
+  const err = S.error ? `<div class="error-box">${esc(S.error)}</div>` : '';
+  $('#content').innerHTML = err + (S.view === 'overview' ? overview() : table(S.view, filtered(S.view)));
+}
+
+async function load() {
+  const ns = encodeURIComponent(S.ns);
+  const kinds = ['pods', 'deployments', 'services', 'ingresses', 'events'];
+  const res = await Promise.allSettled([...kinds.map((k) => api(`/${ns}/${k}`)), api('/nodes')]);
+  const errs = [];
+  S.forbidden = {};
+  [...kinds, 'nodes'].forEach((k, i) => {
+    if (res[i].status === 'fulfilled') S.data[k] = res[i].value;
+    else if (/forbidden/i.test(res[i].reason.message)) { S.data[k] = []; S.forbidden[k] = true; }
+    else { S.data[k] = []; errs.push(`${k}: ${res[i].reason.message}`); }
+  });
+  S.error = errs.length ? errs.join('\n') : null;
+  S.connOk = errs.length + Object.keys(S.forbidden).length < 6;
+  S.connAt = new Date().toLocaleTimeString();
+  renderConn();
+  render();
+}
+
+async function init() {
+  try {
+    S.info = await api('/info');
+  } catch (e) {
+    $('#content').innerHTML = `<div class="error-box">${esc(t('err.server', { m: e.message }))}</div>`; return;
+  }
+  const i = S.info;
+  $('#demoBanner').hidden = !i.demo;
+  $('#ctx').innerHTML = i.contexts.map((c) => `<option ${c.name === i.currentContext ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
+  let nsNames = [], canListNs = true;
+  try { nsNames = (await api('/namespaces')).map((n) => n.name); }
+  catch { canListNs = false; nsNames = [...new Set(i.contexts.map((c) => c.namespace).filter(Boolean))]; }
+  if (!nsNames.includes(i.defaultNamespace)) nsNames.unshift(i.defaultNamespace);
+  const saved = store.get('ns:' + i.currentContext);
+  S.ns = saved && ((saved === '_all' && canListNs) || nsNames.includes(saved)) ? saved : i.defaultNamespace;
+  $('#ns').innerHTML = (canListNs ? `<option value="_all"></option>` : '') + nsNames.map((n) => `<option ${n === S.ns ? 'selected' : ''}>${esc(n)}</option>`).join('');
+  $('#ns').value = S.ns;
+  renderFoot();
+  await load();
+  setAuto();
+}
+
+function setAuto() {
+  clearInterval(S.timer);
+  const sec = Number($('#auto').value);
+  // skip while the browser tab is hidden: no load on the cluster from a forgotten tab
+  if (sec) S.timer = setInterval(() => { if (!document.hidden && (!$('#drawer').classList.contains('open') || D.kind === 'logs')) load(); }, sec * 1000);
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden || !S.info) return;
+  if (Number($('#auto').value)) load();
+  if (isLogs() && D.timer) loadLogs();
+});
+
+// ---------- drawer ----------
+const D = { kind: null, ns: null, name: null, text: '', lines: [], timer: null, req: 0 };
+const RE_ERR = /\b(ERROR|FATAL|CRITICAL|Exception|panic)\b/i, RE_WARN = /\bWARN(ING)?\b/i;
+const isLogs = () => D.kind === 'logs';
+
+function hl(l, q) {
+  if (!q) return esc(l);
+  const lo = l.toLowerCase(), ql = q.toLowerCase();
+  let out = '', i = 0, j;
+  while ((j = lo.indexOf(ql, i)) !== -1) { out += esc(l.slice(i, j)) + '<mark>' + esc(l.slice(j, j + q.length)) + '</mark>'; i = j + q.length; }
+  return out + esc(l.slice(i));
+}
+function lineHTML(l, q) {
+  const cls = RE_ERR.test(l) ? 'e' : RE_WARN.test(l) ? 'w' : '';
+  return `<div${cls ? ` class="${cls}"` : ''}>${hl(l, q)}</div>`;
+}
+const filterQ = () => $('#dFilter').value;
+const visible = (l, q) => !q || !$('#dOnly').checked || l.toLowerCase().includes(q.toLowerCase());
+const atBottom = () => { const b = $('#dBody'); return b.scrollHeight - b.scrollTop - b.clientHeight < 40; };
+function scrollEnd() { const b = $('#dBody'); b.scrollTop = b.scrollHeight; }
+function updateJump() { $('#dJump').classList.toggle('show', isLogs() && !atBottom()); }
+function updateStat(time) {
+  if (!isLogs()) { $('#dStat').textContent = ''; return; }
+  const q = filterQ();
+  const n = q ? D.lines.filter((l) => l.toLowerCase().includes(q.toLowerCase())).length : null;
+  if (time) D.updated = new Date().toLocaleTimeString();
+  $('#dStat').textContent = t('log.lines', { n: D.lines.length }) + (q ? ` · ${t('log.matches', { n })}` : '') + (D.updated ? ` · ${D.updated}` : '');
+}
+function renderLog() {
+  const q = filterQ();
+  const html = D.lines.filter((l) => visible(l, q)).map((l) => lineHTML(l, q)).join('');
+  $('#dBody').innerHTML = html || `<div class="note">${D.lines.length ? t('log.noMatch') : t('log.empty')}</div>`;
+  updateStat();
+}
+
+// kubectl logs --tail N [-c container] [--previous] [--timestamps]; refreshed by timer or ↻
+async function loadLogs(first) {
+  const id = ++D.req;
+  if (first) $('#dBody').innerHTML = `<div class="note">${t('loading')}</div>`;
+  const qs = new URLSearchParams({
+    container: $('#dContainer').value || '', tail: $('#dTail').value,
+    previous: $('#dPrev').checked ? '1' : '0', timestamps: $('#dTs').checked ? '1' : '0',
+  });
+  try {
+    const { text } = await api(`/${encodeURIComponent(D.ns)}/pods/${encodeURIComponent(D.name)}/logs?${qs}`);
+    if (id !== D.req || !isLogs()) return; // a newer request or another drawer took over
+    const body = $('#dBody'), stick = first || atBottom(), top = body.scrollTop;
+    D.lines = (text || '').replace(/\n$/, '').split('\n').filter((l, i, a) => l || a.length > 1);
+    renderLog(); updateStat(true);
+    if (stick) scrollEnd(); else body.scrollTop = top;
+    updateJump();
+  } catch (e) {
+    if (id !== D.req) return;
+    $('#dBody').innerHTML = `<div class="e">${esc(t('err', { m: e.message }))}</div>`;
+  }
+}
+function setLogAuto() {
+  clearInterval(D.timer); D.timer = null;
+  const sec = $('#dPrev').checked ? 0 : Number($('#dAuto').value);
+  $('#dLive').classList.toggle('on', !!sec && isLogs());
+  if (sec && isLogs()) D.timer = setInterval(() => { if (!document.hidden) loadLogs(); }, sec * 1000);
+}
+function stopLogs() { clearInterval(D.timer); D.timer = null; D.req++; $('#dLive').classList.remove('on'); }
+
+async function drawerLoad() {
+  if (isLogs()) { setLogAuto(); return loadLogs(true); }
+  const body = $('#dBody'); body.textContent = t('loading');
+  try {
+    D.text = (await api(`/${encodeURIComponent(D.ns)}/${D.kind === 'podyaml' ? 'pods' : 'deployments'}/${encodeURIComponent(D.name)}/yaml`)).text;
+    body.textContent = D.text;
+  } catch (e) { body.textContent = t('err', { m: e.message }); }
+}
+const drawerTitle = () => (isLogs() ? t('log.title') : 'YAML') + ' · ' + D.name;
+function openDrawer(kind, ns, name) {
+  stopLogs();
+  Object.assign(D, { kind, ns, name, lines: [], text: '', updated: null });
+  const log = isLogs();
+  $('#dTitle').textContent = drawerTitle();
+  $('#dTools').hidden = !log;
+  $('#dDownload').hidden = !log;
+  $('#dStat').textContent = '';
+  const pod = (S.data.pods || []).find((p) => p.name === name && p.namespace === ns);
+  const cs = log && pod ? pod.containers : [];
+  $('#dContainer').hidden = cs.length < 2;
+  $('#dContainer').innerHTML = cs.map((c) => `<option>${esc(c)}</option>`).join('');
+  $('#dPrev').checked = false;
+  $('#dFilter').value = '';
+  $('#dBody').classList.toggle('nowrap', log && !$('#dWrap').checked);
+  $('#drawer').classList.add('open'); $('#drawerBg').classList.add('open');
+  updateJump();
+  drawerLoad();
+}
+function closeDrawer() { stopLogs(); D.kind = null; $('#drawer').classList.remove('open'); $('#drawerBg').classList.remove('open'); }
+const drawerText = () => (isLogs() ? D.lines.join('\n') : D.text);
+
+$('#dClose').addEventListener('click', closeDrawer);
+$('#drawerBg').addEventListener('click', closeDrawer);
+$('#dReload').addEventListener('click', () => (isLogs() ? loadLogs() : drawerLoad()));
+['#dTail', '#dTs', '#dContainer', '#dPrev'].forEach((s) => $(s).addEventListener('change', drawerLoad));
+$('#dAuto').addEventListener('change', () => { store.set('logAuto', $('#dAuto').value); setLogAuto(); });
+$('#dWrap').addEventListener('change', () => $('#dBody').classList.toggle('nowrap', !$('#dWrap').checked));
+$('#dFilter').addEventListener('input', () => { renderLog(); scrollEnd(); updateJump(); });
+$('#dOnly').addEventListener('change', () => { renderLog(); scrollEnd(); });
+$('#dBody').addEventListener('scroll', updateJump);
+$('#dJump').addEventListener('click', () => { scrollEnd(); updateJump(); });
+$('#dFull').addEventListener('click', () => $('#drawer').classList.toggle('full'));
+$('#dCopy').addEventListener('click', () => navigator.clipboard?.writeText(drawerText()).then(() => toast(t('toast.copied'))));
+$('#dDownload').addEventListener('click', () => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([drawerText()], { type: 'text/plain' }));
+  a.download = `${D.name}-${new Date().toISOString().slice(0, 19).replace(/:/g, '')}.log`;
+  a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+
+// ---------- events ----------
+$('#nav').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-view]'); if (!b) return;
+  S.view = b.dataset.view; store.set('view', S.view);
+  $('#side').classList.remove('open'); render();
+});
+$('#content').addEventListener('click', async (e) => {
+  const go = e.target.closest('[data-go]');
+  const th = e.target.closest('th[data-sort]');
+  const b = e.target.closest('[data-act]');
+  if (th && th.dataset.sort !== '_a') {
+    const k = th.dataset.kind, key = th.dataset.sort, cur = S.sort[k];
+    S.sort[k] = { key, dir: cur?.key === key ? -cur.dir : 1 }; render(); return;
+  }
+  if (b) {
+    const { act, ns, name } = b.dataset;
+    const enc = `/${encodeURIComponent(ns)}`;
+    try {
+      if (act === 'logs' || act === 'podyaml' || act === 'depyaml') return openDrawer(act, ns, name);
+      if (act === 'delpod') {
+        if (!confirm(t('confirm.delpod', { name }))) return;
+        await api(`${enc}/pods/${encodeURIComponent(name)}`, { method: 'DELETE' }); toast(t('toast.deleted'));
+      }
+      if (act === 'restartpod') {
+        if (!confirm(t('confirm.restartpod', { name }))) return;
+        await api(`${enc}/pods/${encodeURIComponent(name)}/restart`, { method: 'POST' }); toast(t('toast.restartedPod'));
+      }
+      if (act === 'scale') {
+        const argo = b.dataset.argo;
+        const v = prompt(t('prompt.scale', { name }) + (argo ? '\n\n' + t('prompt.argo', { a: argo }) : ''), b.dataset.r);
+        if (v === null) return;
+        await api(`${enc}/deployments/${encodeURIComponent(name)}/scale`, { method: 'POST', body: { replicas: Number(v) } }); toast(`Scale: ${v}`);
+      }
+      if (act === 'restart') {
+        if (!confirm(t('confirm.restart', { name }))) return;
+        await api(`${enc}/deployments/${encodeURIComponent(name)}/restart`, { method: 'POST' }); toast(t('toast.restarting'));
+      }
+      load();
+    } catch (err) { toast(t('err', { m: err.message })); }
+    return;
+  }
+  if (go) { S.view = go.dataset.go; render(); }
+});
+$('#ns').addEventListener('change', () => {
+  S.ns = $('#ns').value; store.set('ns:' + S.info.currentContext, S.ns);
+  S.data = {}; render(); load();
+});
+$('#ctx').addEventListener('change', async () => {
+  try { await api('/context', { method: 'POST', body: { name: $('#ctx').value } }); S.data = {}; init(); toast('Context: ' + $('#ctx').value); }
+  catch (e) { toast(t('err', { m: e.message })); }
+});
+$('#q').addEventListener('input', () => { S.q = $('#q').value; if (S.view === 'overview' && S.q) S.view = 'pods'; render(); });
+$('#refresh').addEventListener('click', load);
+$('#auto').addEventListener('change', setAuto);
+$('#menu').addEventListener('click', () => $('#side').classList.toggle('open'));
+$('#lang').addEventListener('change', () => {
+  LANG = $('#lang').value; store.set('lang', LANG);
+  applyI18n(); renderFoot(); renderConn(); render();
+  if (D.kind) { $('#dTitle').textContent = drawerTitle(); if (isLogs()) renderLog(); }
+});
+$('#theme').addEventListener('click', () => {
+  const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+  const cur = document.documentElement.dataset.theme || (dark ? 'dark' : 'light');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = next; store.set('theme', next);
+});
+{ const th = store.get('theme'); if (th) document.documentElement.dataset.theme = th; }
+document.addEventListener('keydown', (e) => {
+  const open = $('#drawer').classList.contains('open');
+  if (open && isLogs() && (e.metaKey || e.ctrlKey) && e.key === 'f') { e.preventDefault(); $('#dFilter').focus(); $('#dFilter').select(); return; }
+  if (e.key === 'Escape') { if (document.activeElement === $('#dFilter') && $('#dFilter').value) { $('#dFilter').value = ''; renderLog(); scrollEnd(); return; } closeDrawer(); }
+  if (e.key === '/' && !open && document.activeElement.tagName !== 'INPUT') { e.preventDefault(); $('#q').focus(); }
+});
+
+// ---------- start: splash stays at least ~1s so the logo is seen, then fades ----------
+applyI18n();
+const splashStart = Date.now();
+function hideSplash() {
+  setTimeout(() => {
+    $('#splash').classList.add('hide');
+    setTimeout(() => $('#splash').remove(), 500);
+  }, Math.max(0, 1100 - (Date.now() - splashStart)));
+}
+init().finally(hideSplash);
+</script>
+</body>
+</html>

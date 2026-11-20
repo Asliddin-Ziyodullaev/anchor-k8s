@@ -1,0 +1,17 @@
+node_modules/
+
+# A kubeconfig grants access to the cluster. NEVER commit it.
+# The project itself has no YAML files, so all of them are ignored.
+*.yaml
+*.yml
+*.kubeconfig
+kubeconfig*
+
+# local settings and runtime files
+.env
+anchor-k8s.log
+.anchor-k8s-*.pid
+.claude/
+.DS_Store
+.idea/
+.vscode/
